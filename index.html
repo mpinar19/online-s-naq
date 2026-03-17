@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Məktəb Sınaği</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ════ QEYDİYYAT / GİRİŞ ════ -->
+<div id="s-auth" class="screen active">
+  <div class="auth-wrap">
+
+    <div class="auth-logo">
+      <div class="auth-badge">AZ</div>
+      <div>
+        <div class="auth-brand" data-t="appName">Məktəb Sınaği</div>
+        <div class="auth-brand-sub" data-t="appSub">700 ballıq sistem</div>
+      </div>
+    </div>
+
+    <!-- Dil seçici — auth ekranında -->
+    <div class="lang-switcher auth-lang">
+      <button class="lang-btn active" data-lang="az" onclick="setLang('az')">AZ</button>
+      <button class="lang-btn"        data-lang="ru" onclick="setLang('ru')">RU</button>
+      <button class="lang-btn"        data-lang="en" onclick="setLang('en')">EN</button>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuth('login')"    data-t="login">Giriş</button>
+        <button class="auth-tab"        onclick="switchAuth('register')" data-t="register">Qeydiyyat</button>
+      </div>
+
+      <!-- Giriş formu -->
+      <div id="form-login" class="auth-form-inner">
+        <div class="field-group">
+          <label data-t="username">İstifadəçi adı</label>
+          <input type="text"     id="login-user" data-t="enterUsername" data-t-attr="placeholder" placeholder="İstifadəçi adınızı daxil edin">
+        </div>
+        <div class="field-group">
+          <label data-t="password">Şifrə</label>
+          <input type="password" id="login-pass" data-t="enterPassword" data-t-attr="placeholder" placeholder="Şifrənizi daxil edin">
+        </div>
+        <div class="auth-error" id="login-error"></div>
+        <button class="btn-auth" onclick="doLogin()" data-t="signIn">Daxil ol</button>
+        <div class="auth-hint">
+          <span data-t="noAccount">Hesabınız yoxdur?</span>
+          <span onclick="switchAuth('register')" data-t="registerLink"> Qeydiyyatdan keçin</span>
+        </div>
+      </div>
+
+      <!-- Qeydiyyat formu -->
+      <div id="form-register" class="auth-form-inner" style="display:none">
+        <div class="field-group">
+          <label data-t="fullname">Ad Soyad</label>
+          <input type="text"     id="reg-name"  data-t="enterName"      data-t-attr="placeholder" placeholder="Adınızı daxil edin">
+        </div>
+        <div class="field-group">
+          <label data-t="grade">Sinif</label>
+          <select id="reg-grade">
+            <option value="" data-t="selectGrade">Sinif seçin...</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option><option>11</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label data-t="username">İstifadəçi adı</label>
+          <input type="text"     id="reg-user"  data-t="chooseUsername"  data-t-attr="placeholder" placeholder="İstifadəçi adı seçin">
+        </div>
+        <div class="field-group">
+          <label data-t="password">Şifrə</label>
+          <input type="password" id="reg-pass"  data-t="createPassword"  data-t-attr="placeholder" placeholder="Şifrə yaradın (min. 4 simvol)">
+        </div>
+        <div class="auth-error" id="reg-error"></div>
+        <button class="btn-auth" onclick="doRegister()" data-t="signUp">Qeydiyyatdan keç</button>
+        <div class="auth-hint">
+          <span data-t="hasAccount">Hesabınız var?</span>
+          <span onclick="switchAuth('login')" data-t="loginLink"> Daxil olun</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════ ANA SƏHİFƏ ════ -->
+<div id="s-home" class="screen">
+  <header class="site-header">
+    <div class="hdr-inner">
+      <div class="logo">
+        <div class="logo-badge">AZ</div>
+        <div>
+          <div class="logo-title" data-t="appName">Məktəb Sınaği</div>
+          <div class="logo-sub"   data-t="appSub">700 ballıq sistem</div>
+        </div>
+      </div>
+      <div class="user-bar">
+        <div class="user-info">
+          <div class="user-avatar" id="hdr-avatar"></div>
+          <div>
+            <div class="user-name"  id="hdr-name"></div>
+            <div class="user-grade" id="hdr-grade"></div>
+          </div>
+        </div>
+        <div class="hdr-actions">
+          <!-- Dil seçici -->
+          <div class="lang-switcher">
+            <button class="lang-btn active" data-lang="az" onclick="setLang('az')">AZ</button>
+            <button class="lang-btn"        data-lang="ru" onclick="setLang('ru')">RU</button>
+            <button class="lang-btn"        data-lang="en" onclick="setLang('en')">EN</button>
+          </div>
+          <button class="btn-icon" onclick="toggleTheme()" id="theme-btn" title="Tema">🌙</button>
+          <button class="btn-icon" onclick="showHistory()"  title="Nəticələr">📊</button>
+          <button class="btn-icon" onclick="logout()"       title="Çıxış">🚪</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="home-body">
+    <section class="section">
+      <div class="section-head"><span class="snm">01</span><h2 data-t="step1">Sinif seçin</h2></div>
+      <div class="grade-grid" id="grade-grid"></div>
+    </section>
+
+    <section class="section" id="type-section" style="display:none">
+      <div class="section-head"><span class="snm">02</span><h2 data-t="step2">Sınaq növü</h2></div>
+      <div class="type-grid" id="type-grid"></div>
+    </section>
+
+    <section class="section" id="subj-section" style="display:none">
+      <div class="section-head"><span class="snm">03</span><h2 data-t="step3">Fən seçin</h2></div>
+      <div class="subject-grid" id="subject-grid"></div>
+    </section>
+
+    <section class="section" id="topic-section" style="display:none">
+      <div class="section-head"><span class="snm">04</span><h2 data-t="step4">Mövzu seçin</h2></div>
+      <div class="chip-row" id="topic-chips"></div>
+    </section>
+
+    <div id="start-wrap" style="display:none">
+      <div class="start-card">
+        <div class="start-summary" id="start-summary"></div>
+        <button class="btn-start" onclick="startQuiz()">
+          <span data-t="startBtn">Sınaqa başla</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SINAQ EKRANI ════ -->
+<div id="s-quiz" class="screen">
+  <div class="quiz-topbar">
+    <div class="qtop-left">
+      <button class="back-btn" onclick="confirmExit()" data-t="exitBtn">✕ Çıx</button>
+      <div class="quiz-meta" id="quiz-meta"></div>
+    </div>
+    <div class="qtop-right">
+      <div class="timer-badge" id="timer-badge">
+        <span>⏱</span>
+        <span id="timer-display">00:00</span>
+      </div>
+      <!-- İstənilən vaxt bitirmək düyməsi -->
+      <button class="btn-finish-now" onclick="confirmFinishNow()" id="btn-finish-now">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        <span data-t="finishExam">İmtahanı bitir</span>
+      </button>
+    </div>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="q-progress"></div>
+  </div>
+  <div class="q-nav-strip" id="q-nav-strip"></div>
+  <div class="quiz-body">
+    <div id="q-area"></div>
+    <div id="finish-wrap" style="display:none">
+      <div class="finish-card">
+        <div class="finish-icon">🏁</div>
+        <div class="finish-title" data-t="allAnswered">Bütün sualları cavabladınız!</div>
+        <div class="finish-sub" id="finish-sub"></div>
+        <button class="btn-start" onclick="finishExam()">
+          <span data-t="finishNow">İmtahanı bitir və yoxla</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ NƏTİCƏ EKRANI ════ -->
+<div id="s-result" class="screen">
+  <div class="result-wrap">
+    <div class="result-top">
+      <div class="medal"     id="medal-icon"></div>
+      <div class="big-score" id="big-score"></div>
+      <div class="score-lbl">/ 700 bal</div>
+      <div class="res-title" id="res-title"></div>
+      <div class="res-sub"   id="res-sub"></div>
+    </div>
+
+    <div class="stat-cards" id="stat-cards"></div>
+
+    <div class="res-tabs">
+      <button class="res-tab active" onclick="switchResTab(0)" data-t="tabResult">Nəticə</button>
+      <button class="res-tab"        onclick="switchResTab(1)" data-t="tabErrors">Səhvlərin izahı</button>
+      <button class="res-tab"        onclick="switchResTab(2)" data-t="tabAll">Bütün suallar</button>
+      <button class="res-tab"        onclick="switchResTab(3)" data-t="tabAI">🤖 Yeni suallar</button>
+    </div>
+
+    <div id="rtab-0" class="rtab">
+      <div id="subj-breakdown"></div>
+      <div class="res-actions">
+        <button class="btn-start small" onclick="goHome()">
+          <span data-t="newExam">Yeni sınaq</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="rtab-1" class="rtab hidden">
+      <div class="review-header"><span id="wrong-count-label"></span></div>
+      <div id="wrong-review"></div>
+    </div>
+
+    <div id="rtab-2" class="rtab hidden">
+      <div id="q-review"></div>
+    </div>
+
+    <div id="rtab-3" class="rtab hidden">
+      <div class="ai-gen-panel">
+        <div class="ai-gen-header">
+          <div class="ai-gen-icon">🤖</div>
+          <div>
+            <h3 data-t="aiTitle">PDF-dən yeni suallar yarat</h3>
+            <p data-t="aiDesc">PDF faylınızı yükləyin — AI sualları oxuyub yeni suallar yaradacaq</p>
+          </div>
+        </div>
+
+        <div class="gen-step" id="gen-step-1">
+          <div class="step-label"><span class="step-num">1</span> <span data-t="uploadStep">PDF faylı seçin</span></div>
+          <div class="upload-zone" id="upload-zone" onclick="document.getElementById('pdf-file-input').click()">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text" data-t="uploadClick">PDF faylı seçmək üçün klikləyin</div>
+            <div class="upload-hint" data-t="uploadHint">Sualların olduğu PDF faylı yükləyin</div>
+            <input type="file" id="pdf-file-input" accept=".pdf,.txt" style="display:none" onchange="handleFileUpload(event)">
+          </div>
+          <div id="file-info" class="file-info" style="display:none"></div>
+        </div>
+
+        <div class="gen-step" id="gen-step-2" style="display:none">
+          <div class="step-label"><span class="step-num">2</span> <span data-t="paramsStep">Parametrlər</span></div>
+          <div class="gen-params">
+            <div class="param-row">
+              <label data-t="qCount">Sual sayı</label>
+              <div class="param-chips" id="count-chips">
+                <div class="param-chip active" data-val="10" onclick="selectParam(this,'count-chips')">10</div>
+                <div class="param-chip" data-val="20" onclick="selectParam(this,'count-chips')">20</div>
+                <div class="param-chip" data-val="30" onclick="selectParam(this,'count-chips')">30</div>
+                <div class="param-chip" data-val="50" onclick="selectParam(this,'count-chips')">50</div>
+              </div>
+            </div>
+            <div class="param-row">
+              <label data-t="difficulty">Çətinlik</label>
+              <div class="param-chips" id="diff-chips">
+                <div class="param-chip active" data-val="qarışıq" onclick="selectParam(this,'diff-chips')" data-t="diffMixed">Qarışıq</div>
+                <div class="param-chip" data-val="asan"   onclick="selectParam(this,'diff-chips')" data-t="diffEasy">Asan</div>
+                <div class="param-chip" data-val="orta"   onclick="selectParam(this,'diff-chips')" data-t="diffMed">Orta</div>
+                <div class="param-chip" data-val="çətin"  onclick="selectParam(this,'diff-chips')" data-t="diffHard">Çətin</div>
+              </div>
+            </div>
+            <div class="param-row">
+              <label data-t="language">Dil</label>
+              <div class="param-chips" id="lang-chips">
+                <div class="param-chip active" data-val="Azərbaycan dilində" onclick="selectParam(this,'lang-chips')" data-t="langAz">Azərbaycan</div>
+                <div class="param-chip" data-val="rus dilində"      onclick="selectParam(this,'lang-chips')" data-t="langRu">Rus</div>
+                <div class="param-chip" data-val="ingilis dilində"  onclick="selectParam(this,'lang-chips')" data-t="langEn">İngilis</div>
+              </div>
+            </div>
+          </div>
+          <button class="btn-start small" id="gen-btn" onclick="generateQuestions()">
+            <span data-t="generateBtn">Suallar yarat</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </button>
+        </div>
+
+        <div class="gen-step" id="gen-step-3" style="display:none">
+          <div class="gen-loading">
+            <div class="gen-spinner"></div>
+            <div class="gen-loading-text" id="gen-loading-text" data-t="generating">Suallar yaradılır...</div>
+          </div>
+        </div>
+
+        <div class="gen-step" id="gen-step-4" style="display:none">
+          <div class="gen-result-header">
+            <span id="gen-result-count"></span>
+            <div style="display:flex;gap:8px">
+              <button class="btn" onclick="startGenQuiz()"  data-t="startGenQuiz">Sınaq kimi başla</button>
+              <button class="btn" onclick="resetGenerator()" data-t="reupload">Yenidən yüklə</button>
+            </div>
+          </div>
+          <div id="gen-questions-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TARİXÇƏ MODALı ════ -->
+<div id="modal-history" class="modal-overlay" style="display:none" onclick="closeHistory(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 data-t="histTitle">Nəticə tarixi</h3>
+      <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+    </div>
+    <div id="history-content"></div>
+  </div>
+</div>
+
+<!-- ════ ÇIXIŞ TƏSDİQİ ════ -->
+<div id="modal-exit" class="modal-overlay" style="display:none">
+  <div class="modal-box small">
+    <div class="modal-head"><h3 data-t="stopExam">Sınaqi dayandır?</h3></div>
+    <p style="color:var(--txt2);font-size:14px;margin-bottom:1.5rem" data-t="stopDesc">İrəliləyişiniz silinəcək. Davam etmək istəyirsiniz?</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn"           onclick="closeExitModal()" data-t="goBack">Geri qayıt</button>
+      <button class="btn btn-danger" onclick="forceExit()"      data-t="yesExit">Bəli, çıx</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ İMTAHANI BİTİR TƏSDİQİ ════ -->
+<div id="modal-finish-now" class="modal-overlay" style="display:none">
+  <div class="modal-box small">
+    <div class="modal-head"><h3 data-t="finishConfirm">İmtahanı bitirmək istəyirsiniz?</h3></div>
+    <p style="color:var(--txt2);font-size:14px;margin-bottom:1.5rem" id="finish-now-desc"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn"           onclick="closeFinishNowModal()" data-t="goBack">Geri qayıt</button>
+      <button class="btn btn-primary" onclick="doFinishNow()"       data-t="finishNow">İmtahanı bitir və yoxla</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
