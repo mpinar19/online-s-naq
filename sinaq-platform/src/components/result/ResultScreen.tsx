@@ -1,7 +1,7 @@
 ﻿'use client';
 import { useEffect, useState } from 'react';
 import { useQuizStore, useAppStore } from '@/lib/store';
-import { getCurUser, getUsers, saveUsers } from '@/lib/auth';
+import { getCurUser, saveHistory } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import {
@@ -34,8 +34,6 @@ export default function ResultScreen() {
   useEffect(() => {
     const cu = getCurUser();
     if (!cu) return;
-    const users = getUsers();
-    if (!users[cu.username]) return;
     const bd: Record<string, { correct: number; total: number; subject: string }> = {};
     questions.forEach((q, i) => {
       const t = q._topic || 'Digər';
@@ -47,11 +45,7 @@ export default function ResultScreen() {
     const label = examType === 'all_mixed'
       ? `${grade}-ci sinif — Bütün fənlər`
       : `${subject}${topic && topic !== 'all' ? ' — ' + topic : ''} (${grade}-ci sinif)`;
-    const entry = { label, bal700, correct, total, pct, date: new Date().toLocaleDateString('az-AZ'), topicBreakdown: bd };
-    if (!users[cu.username].history) users[cu.username].history = [];
-    users[cu.username].history.unshift(entry);
-    if (users[cu.username].history.length > 30) users[cu.username].history.length = 30;
-    saveUsers(users);
+    saveHistory(cu.username, { label, bal700, correct, total, pct, date: new Date().toLocaleDateString('az-AZ'), topicBreakdown: bd });
   }, []);
 
   const subjectMap: Record<string, { total: number; correct: number }> = {};
