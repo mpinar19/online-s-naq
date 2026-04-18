@@ -1,0 +1,10 @@
+﻿{
+  "name": "sinaq-online",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix sinaq-platform",
+    "build": "npm run build --prefix sinaq-platform",
+    "start": "npm run start --prefix sinaq-platform"
+  }
+}
