@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Məktəb Sınaği</title>
 <link rel="stylesheet" href="style.css">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -18,13 +23,6 @@
         <div class="auth-brand" data-t="appName">Məktəb Sınaği</div>
         <div class="auth-brand-sub" data-t="appSub">700 ballıq sistem</div>
       </div>
-    </div>
-
-    <!-- Dil seçici — auth ekranında -->
-    <div class="lang-switcher auth-lang">
-      <button class="lang-btn active" data-lang="az" onclick="setLang('az')">AZ</button>
-      <button class="lang-btn"        data-lang="ru" onclick="setLang('ru')">RU</button>
-      <button class="lang-btn"        data-lang="en" onclick="setLang('en')">EN</button>
     </div>
 
     <div class="auth-card">
@@ -57,10 +55,10 @@
           <label data-t="fullname">Ad Soyad</label>
           <input type="text"     id="reg-name"  data-t="enterName"      data-t-attr="placeholder" placeholder="Adınızı daxil edin">
         </div>
-        <div class="field-group">
-          <label data-t="grade">Sinif</label>
+        <div class="field-group" id="grade-field">
+          <label>Sinif</label>
           <select id="reg-grade">
-            <option value="" data-t="selectGrade">Sinif seçin...</option>
+            <option value="">Sinif seçin...</option>
             <option>1</option><option>2</option><option>3</option><option>4</option>
             <option>5</option><option>6</option><option>7</option><option>8</option>
             <option>9</option><option>10</option><option>11</option>
@@ -86,6 +84,124 @@
   </div>
 </div>
 
+
+
+<!-- ════ ADMİN PANELİ ════ -->
+<div id="s-admin" class="screen">
+  <header class="site-header">
+    <div class="hdr-inner">
+      <div class="logo">
+        <div class="logo-badge" style="background:linear-gradient(135deg,#EF3340,#7B5CF5)">AD</div>
+        <div>
+          <div class="logo-title">Məktəb Sınaği</div>
+          <div class="logo-sub">Admin Paneli</div>
+        </div>
+      </div>
+      <div class="user-bar">
+        <div class="user-info">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#EF3340,#7B5CF5)">A</div>
+          <div>
+            <div class="user-name">Administrator</div>
+            <div class="user-grade">Admin</div>
+          </div>
+        </div>
+        <div class="hdr-actions">
+          <button class="btn-icon" onclick="toggleTheme()" title="Tema">🌙</button>
+          <button class="btn-icon" onclick="logout()" title="Çıxış">🚪</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-body">
+
+    <!-- Tab naviqasiya -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="overview" onclick="switchAdminTab('overview')">📊 İcmal</button>
+      <button class="admin-tab" data-tab="teachers"        onclick="switchAdminTab('teachers')">👨‍🏫 Müəllimlər</button>
+      <button class="admin-tab" data-tab="students"        onclick="switchAdminTab('students')">🎓 Şagirdlər</button>
+      <button class="admin-tab" data-tab="homework"         onclick="switchAdminTab('homework')">📚 Ödevlər</button>
+      <button class="admin-tab" data-tab="weak"            onclick="switchAdminTab('weak')">⚠️ Analiz</button>
+    </div>
+
+    <div id="admin-content"></div>
+
+  </div>
+</div>
+
+<!-- ════ MÜƏLLİM EKRANI ════ -->
+<div id="s-teacher" class="screen">
+  <header class="site-header">
+    <div class="hdr-inner">
+      <div class="logo">
+        <div class="logo-badge">AZ</div>
+        <div>
+          <div class="logo-title">Məktəb Sınaği</div>
+          <div class="logo-sub">Müəllim Paneli</div>
+        </div>
+      </div>
+      <div class="user-bar">
+        <div class="user-info">
+          <div class="user-avatar" id="t-hdr-avatar"></div>
+          <div>
+            <div class="user-name"  id="t-hdr-name"></div>
+            <div class="user-grade">Müəllim</div>
+          </div>
+        </div>
+        <div class="hdr-actions">
+          <button class="btn-icon" onclick="toggleTheme()" title="Tema">🌙</button>
+          <button class="btn-icon" onclick="logout()" title="Çıxış">🚪</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="teacher-body">
+
+    <!-- Ümumi statistika kartları -->
+    <div class="section">
+      <div class="section-head"><span class="snm">📊</span><h2>Ümumi Statistika</h2></div>
+      <div class="stat-cards" id="t-stat-cards"></div>
+    </div>
+
+    <!-- Şagird siyahısı -->
+    <div class="section">
+      <div class="section-head">
+        <span class="snm">👥</span><h2>Şagirdlər</h2>
+        <div class="t-search-wrap">
+          <input type="text" id="t-search" placeholder="Şagird axtar..." oninput="filterStudents(this.value)" class="t-search">
+        </div>
+      </div>
+      <div id="t-student-list"></div>
+    </div>
+
+    <!-- Sınaqlar (Supabase-dən) -->
+    <div class="section">
+      <div class="section-head">
+        <span class="snm">📋</span><h2>Sınaqlar</h2>
+        <button class="btn-start small" onclick="showCreateExam()" style="margin-left:auto">+ Sınaq Ver</button>
+      </div>
+      <div id="t-exams-list"></div>
+    </div>
+
+    <!-- Ödəvlər (Tapşırıqlar) -->
+    <div class="section">
+      <div class="section-head">
+        <span class="snm">📚</span><h2>Ödəvlər</h2>
+        <button class="btn-start small" onclick="showCreateHomework()" style="margin-left:auto">+ Ödev Ver</button>
+      </div>
+      <div id="t-homework-list"></div>
+    </div>
+
+    <!-- Zəif mövzular -->
+    <div class="section">
+      <div class="section-head"><span class="snm">⚠️</span><h2>Ən Çox Çətinlik Çəkilən Mövzular</h2></div>
+      <div id="t-weak-topics"></div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ════ ANA SƏHİFƏ ════ -->
 <div id="s-home" class="screen">
   <header class="site-header">
@@ -106,12 +222,13 @@
           </div>
         </div>
         <div class="hdr-actions">
-          <!-- Dil seçici -->
-          <div class="lang-switcher">
-            <button class="lang-btn active" data-lang="az" onclick="setLang('az')">AZ</button>
-            <button class="lang-btn"        data-lang="ru" onclick="setLang('ru')">RU</button>
-            <button class="lang-btn"        data-lang="en" onclick="setLang('en')">EN</button>
-          </div>
+          <button class="btn-icon" id="lb-btn"          onclick="showLeaderboard()"  title="Liderboard">🏆</button>
+          <button class="btn-icon" id="adaptive-btn"    onclick="showAdaptive()"     title="Adaptiv sınaq">🎯</button>
+          <button class="btn-icon" id="badges-btn"      onclick="showBadges()"       title="Badjlarım">🏅</button>
+          <button class="btn-icon" id="calendar-btn"    onclick="showTimetable()"    title="Takvim">📅</button>
+          <button class="btn-icon" id="analytics-btn"   onclick="showAnalytics()"    title="Analitika">📈</button>
+          <button class="btn-icon" id="profile-btn"     onclick="showProfile()"      title="Profil">👤</button>
+          <button class="btn-icon" id="teacher-btn"     onclick="showTeacherPanel()" title="Müəllim paneli" style="display:none">👨‍🏫</button>
           <button class="btn-icon" onclick="toggleTheme()" id="theme-btn" title="Tema">🌙</button>
           <button class="btn-icon" onclick="showHistory()"  title="Nəticələr">📊</button>
           <button class="btn-icon" onclick="logout()"       title="Çıxış">🚪</button>
@@ -121,6 +238,10 @@
   </header>
 
   <div class="home-body">
+    <!-- Streak + Ödev widgetleri -->
+    <div id="streak-section" style="margin-bottom:1.5rem"></div>
+    <div id="homework-section" style="margin-bottom:1.5rem"></div>
+
     <section class="section">
       <div class="section-head"><span class="snm">01</span><h2 data-t="step1">Sinif seçin</h2></div>
       <div class="grade-grid" id="grade-grid"></div>
@@ -214,10 +335,13 @@
 
     <div id="rtab-0" class="rtab">
       <div id="subj-breakdown"></div>
-      <div class="res-actions">
+      <div class="res-actions" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
         <button class="btn-start small" onclick="goHome()">
-          <span data-t="newExam">Yeni sınaq</span>
+          <span>Yeni sınaq</span>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="btn-start small" onclick="downloadResultPDF()" style="background:linear-gradient(135deg,var(--az2),#B91C1C)">
+          <span>📄 PDF yüklə</span>
         </button>
       </div>
     </div>
@@ -345,8 +469,127 @@
   </div>
 </div>
 
+
+<!-- ════ LİDERBOARD ════ -->
+<div id="modal-leaderboard" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>🏆 Liderboard</h3>
+      <button class="modal-close" onclick="el('modal-leaderboard').style.display='none'">✕</button>
+    </div>
+    <div class="lb-tabs">
+      <button class="lb-tab active" data-tab="all"   onclick="switchLbTab('all')">Ümumi</button>
+      <button class="lb-tab"        data-tab="grade" onclick="switchLbTab('grade')">Sinifdən</button>
+      <button class="lb-tab"        data-tab="week"  onclick="switchLbTab('week')">Bu həftə</button>
+    </div>
+    <div id="leaderboard-content"></div>
+  </div>
+</div>
+
+<!-- ════ ADAPTİV SINAQ ════ -->
+<div id="modal-adaptive" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>🎯 Adaptiv Sınaq</h3>
+      <button class="modal-close" onclick="el('modal-adaptive').style.display='none'">✕</button>
+    </div>
+    <p style="font-size:14px;color:var(--txt2);margin-bottom:1.2rem;line-height:1.6">
+      Sistem zəif olduğunuz mövzuları analiz edib xüsusi sınaq hazırlayır.
+    </p>
+    <div id="adaptive-analysis"></div>
+    <div style="margin-top:1.25rem;text-align:center">
+      <button class="btn-start" onclick="startAdaptiveQuiz()">
+        <span>Adaptiv sınaqa başla</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MÜƏLLİM PANELİ ════ -->
+<div id="modal-teacher" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:660px">
+    <div class="modal-head">
+      <h3>👨‍🏫 Müəllim Paneli — Şagird Nəticələri</h3>
+      <button class="modal-close" onclick="el('modal-teacher').style.display='none'">✕</button>
+    </div>
+    <div id="teacher-content"></div>
+  </div>
+</div>
+
+<!-- ════ PROFİL MODAL ════ -->
+<div id="modal-profile" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeProfile()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>👤 Mənim Profilim</h3>
+      <button class="modal-close" onclick="closeProfile()">✕</button>
+    </div>
+    <div id="profile-content"></div>
+  </div>
+</div>
+
+<!-- ════ BADJLAR MODAL ════ -->
+<div id="modal-badges" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeBadges()">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-head">
+      <h3>🏅 Badjlarım</h3>
+      <button class="modal-close" onclick="closeBadges()">✕</button>
+    </div>
+    <div id="badges-content"></div>
+  </div>
+</div>
+
+<!-- ════ TAKVİM MODAL ════ -->
+<div id="modal-timetable" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeTimetable()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>📅 Sınaq Tarixi</h3>
+      <button class="modal-close" onclick="closeTimetable()">✕</button>
+    </div>
+    <div id="timetable-content"></div>
+  </div>
+</div>
+
+<!-- ════ ANALITIKA MODAL ════ -->
+<div id="modal-analytics" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeAnalytics()">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-head">
+      <h3>📊 Performans Analizi</h3>
+      <button class="modal-close" onclick="closeAnalytics()">✕</button>
+    </div>
+    <div id="analytics-content"></div>
+  </div>
+</div>
+
+<!-- ════ SINAQ VER MODAL (Supabase) ════ -->
+<div id="modal-sinaq" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCreateExam()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>📋 Yeni Sınaq Əlavə Et</h3>
+      <button class="modal-close" onclick="closeCreateExam()">✕</button>
+    </div>
+    <div id="sinaq-form-content"></div>
+  </div>
+</div>
+
+<!-- ════ ÖDEV VER MODAL (Homework Assignments) ════ -->
+<div id="modal-homework" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCreateHomework()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>📚 Yeni Ödev Verin</h3>
+      <button class="modal-close" onclick="closeCreateHomework()">✕</button>
+    </div>
+    <div id="homework-form-content"></div>
+  </div>
+</div>
+
 <script src="data.js"></script>
-<script src="i18n.js"></script>
+<script src="firebase.js"></script>
+<script src="supabase.js"></script>
 <script src="app.js"></script>
+<script src="features.js"></script>
+<script src="features2.js"></script>
+<script src="features3.js"></script>
+<script>initSupabase();</script>
 </body>
 </html>

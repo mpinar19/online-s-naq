@@ -1,9 +1,7 @@
 {
+  "framework": "nextjs",
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
   "installCommand": "npm install",
-  "env": {
-    "ANTHROPIC_API_KEY": "@anthropic_api_key"
-  }
+  "regions": ["iad1"]
 }

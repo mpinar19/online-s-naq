@@ -12,8 +12,8 @@
 ────────────────────────────────────── */
 const getUsers    = () => JSON.parse(localStorage.getItem('az_users') || '{}');
 const saveUsers   = u  => localStorage.setItem('az_users', JSON.stringify(u));
-const getCurUser  = () => JSON.parse(localStorage.getItem('az_cur')   || 'null');
-const saveCurUser = u  => localStorage.setItem('az_cur',   JSON.stringify(u));
+const getCurUser  = () => JSON.parse(sessionStorage.getItem('az_cur') || 'null');
+const saveCurUser = u  => { if (u) sessionStorage.setItem('az_cur', JSON.stringify(u)); else sessionStorage.removeItem('az_cur'); };
 
 function switchAuth(tab) {
   document.querySelectorAll('.auth-tab').forEach((t,i) =>
@@ -32,53 +32,97 @@ function doLogin() {
   if (!user||!pass) { err.textContent='Bütün xanaları doldurun.'; return; }
   const users = getUsers();
   if (!users[user]||users[user].pass!==pass) { err.textContent='İstifadəçi adı və ya şifrə yanlışdır.'; return; }
-  saveCurUser({ username:user, name:users[user].name, grade:users[user].grade });
+  saveCurUser({ username:user, name:users[user].name, grade:users[user].grade, role:users[user].role||'student' });
   enterApp();
 }
 
 function doRegister() {
-  const name  = el('reg-name').value.trim();
-  const grade = el('reg-grade').value;
-  const user  = el('reg-user').value.trim();
-  const pass  = el('reg-pass').value;
-  const err   = el('reg-error');
-  if (!name||!grade||!user||!pass) { err.textContent='Bütün xanaları doldurun.'; return; }
-  if (pass.length<4) { err.textContent='Şifrə ən az 4 simvol olmalıdır.'; return; }
+  const name    = el('reg-name').value.trim();
+  const role    = 'student';
+  const gradeEl = el('reg-grade');
+  const grade   = gradeEl ? gradeEl.value : '';
+  const user    = el('reg-user').value.trim();
+  const pass    = el('reg-pass').value;
+  const err     = el('reg-error');
+  if (!name || !user || !pass) { err.textContent='Bütün xanaları doldurun.'; return; }
+  if (!grade) { err.textContent='Sinif seçin.'; return; }
+  if (pass.length < 4) { err.textContent='Şifrə ən az 4 simvol olmalıdır.'; return; }
   const users = getUsers();
   if (users[user]) { err.textContent='Bu istifadəçi adı artıq mövcuddur.'; return; }
-  users[user] = { name, grade, pass, history:[] };
+  users[user] = { name, grade, role, pass, history:[] };
   saveUsers(users);
-  saveCurUser({ username:user, name, grade });
-  enterApp();
+  saveCurUser(null);
+  el('reg-error').style.color = 'var(--green)';
+  el('reg-error').textContent = '✓ Qeydiyyat tamamlandı! İndi daxil olun.';
+  setTimeout(() => {
+    switchAuth('login');
+    el('login-user').value = user;
+    el('login-pass').value = '';
+    el('login-pass').focus();
+  }, 1200);
 }
 
 function enterApp() {
   const cu = getCurUser();
   el('hdr-name').textContent   = cu.name;
-  el('hdr-grade').textContent  = cu.grade + t('gradeLabel');
+  el('hdr-grade').textContent  = cu.role === 'teacher' ? 'Müəllim' : cu.grade + '-ci sinif';
   el('hdr-avatar').textContent = cu.name.charAt(0).toUpperCase();
-  applyTranslations();
-  showScreen('s-home');
-  buildGradeGrid();
-  setTimeout(() => {
-    document.querySelectorAll('.grade-card').forEach(c => {
-      if (c.querySelector('.gnum').textContent === String(cu.grade)) c.click();
-    });
-  }, 60);
+  const tb = el('teacher-btn');
+  if (tb) tb.style.display = cu.role === 'teacher' ? '' : 'none';
+
+  // Adaptiv sınaq düyməsini yalnız şagirdə göstər
+  const adb = el('adaptive-btn');
+  if (adb) adb.style.display = cu.role === 'teacher' ? 'none' : '';
+
+  if (cu.role === 'admin') {
+    showScreen('s-admin');
+    if (typeof renderAdminTab === 'function') renderAdminTab('overview');
+  } else if (cu.role === 'teacher') {
+    showScreen('s-teacher');
+    if (typeof showTeacherPanel === 'function') showTeacherPanel();
+  } else {
+    const hb = document.querySelector('.home-body');
+    if (hb) hb.style.display = '';
+    showScreen('s-home');
+    buildGradeGrid();
+    setTimeout(() => {
+      document.querySelectorAll('.grade-card').forEach(c => {
+        if (c.querySelector && c.querySelector('.gnum') &&
+            c.querySelector('.gnum').textContent === String(cu.grade)) c.click();
+      });
+    }, 60);
+  }
 }
 
-function logout() { saveCurUser(null); showScreen('s-auth'); switchAuth('login'); }
+function logout() { saveCurUser(null); const hb = document.querySelector('.home-body'); if(hb) hb.style.display=''; showScreen('s-auth'); const hasUsers = Object.keys(getUsers()).length > 0; switchAuth(hasUsers ? 'login' : 'register'); }
 
 /* ──────────────────────────────────────
    TARİXÇƏ
 ────────────────────────────────────── */
 function saveHistory(entry) {
   const cu = getCurUser(); if (!cu) return;
+  if (ST && ST.questions && ST.answers) {
+    const bd = {};
+    ST.questions.forEach((q, i) => {
+      const topic   = q._topic   || 'Digər';
+      const subject = q._subject || 'Digər';
+      if (!bd[topic]) bd[topic] = { correct:0, total:0, subject };
+      bd[topic].total++;
+      if (ST.answers[i] === q.ans) bd[topic].correct++;
+    });
+    entry.topicBreakdown = bd;
+    if (ST.isAdaptive) { entry.label = '🎯 ' + entry.label; ST.isAdaptive = false; }
+  }
   const users = getUsers();
   if (!users[cu.username].history) users[cu.username].history = [];
   users[cu.username].history.unshift(entry);
-  if (users[cu.username].history.length > 20) users[cu.username].history.length = 20;
+  if (users[cu.username].history.length > 30) users[cu.username].history.length = 30;
   saveUsers(users);
+  // Firebase-ə də sinxronlaşdır
+  if (_db) { FBUsers.save(cu.username, users[cu.username]).catch(()=>{}); }
+  // Hədəf/streak yenilə
+  updateDailyStreak(cu.username);
+  checkHomeworkCompletion(cu.username, entry);
 }
 
 function showHistory() {
@@ -125,6 +169,11 @@ const ST = {
    ANA SƏHİFƏ
 ────────────────────────────────────── */
 function buildGradeGrid() {
+  // Streak + ödev widgetləri
+  const ss = el('streak-section');
+  if (ss && typeof renderStreakWidget === 'function') ss.innerHTML = renderStreakWidget();
+  const hs = el('homework-section');
+  if (hs && typeof renderHomeworkWidget === 'function') hs.innerHTML = renderHomeworkWidget();
   const grid = el('grade-grid');
   grid.innerHTML = '';
   ALL_GRADES.forEach(g => {
@@ -221,14 +270,14 @@ function showStartCard() {
   let lines = [];
   if (ST.examType === 'all_mixed') {
     const cfg = EXAM_CONFIG[ST.grade + '_all'] || [];
-    cfg.forEach(c => lines.push(`<strong>${c.subject}:</strong> ${c.count} ${t('questions')}`));
-    lines.push(`<strong>${t('totalQ')}:</strong> ${total} ${t('questions')}`);
+    cfg.forEach(c => lines.push(`<strong>${c.subject}:</strong> ${c.count} ${'sual'}`));
+    lines.push(`<strong>${'Cəmi'}:</strong> ${total} ${'sual'}`);
   } else {
-    lines.push(`<strong>${t('subject')}:</strong> ${ST.subject}`);
-    lines.push(`<strong>${t('topic')}:</strong> ${(!ST.topic || ST.topic === 'all') ? t('allTopics') : ST.topic}`);
-    lines.push(`<strong>${t('questions')}:</strong> ${total}`);
+    lines.push(`<strong>${'Fən'}:</strong> ${ST.subject}`);
+    lines.push(`<strong>${'Mövzu'}:</strong> ${(!ST.topic || ST.topic === 'all') ? 'Bütün mövzular' : ST.topic}`);
+    lines.push(`<strong>${'sual'}:</strong> ${total}`);
   }
-  lines.push(`<strong>${t('time')}:</strong> ${mins} ${t('minutes')} (${t('timePerQ')})`); 
+  lines.push(`<strong>${'Vaxt'}:</strong> ${mins} ${'dəqiqə'} (${'hər suala ~90 san'})`); 
   el('start-summary').innerHTML = lines.join('<br>');
 }
 
@@ -245,7 +294,7 @@ function buildQuestions() {
       const subjectBank = gradeBank[subject] || {};
       const all = [];
       Object.entries(subjectBank).forEach(([t, qs]) =>
-        qs.forEach(q => all.push({ ...q, _subject: subject, _topic: t }))
+        qs.forEach(q => all.push({ ...getQ(q), _subject: subject, _topic: t }))
       );
       const sh = shuffle([...all]);
       // Yalniz movcud sual sayina qedar got, tekrar etme
@@ -261,11 +310,11 @@ function buildQuestions() {
 
   if (!ST.topic || ST.topic === 'all') {
     Object.entries(subjectBank).forEach(([t, qs]) =>
-      qs.forEach(q => pool.push({ ...q, _subject: ST.subject, _topic: t }))
+      qs.forEach(q => pool.push({ ...getQ(q), _subject: ST.subject, _topic: t }))
     );
   } else {
     (subjectBank[ST.topic] || []).forEach(q =>
-      pool.push({ ...q, _subject: ST.subject, _topic: ST.topic })
+      pool.push({ ...getQ(q), _subject: ST.subject, _topic: ST.topic })
     );
   }
 
@@ -287,118 +336,11 @@ const shuffle = arr => {
    SINAQ BAŞLANĞICI
 ────────────────────────────────────── */
 
-/* ──────────────────────────────────────
-   SUAL TƏRCÜMƏSİ (RU / EN)
-   Batched: hər dəfə max 15 sual göndərir
-────────────────────────────────────── */
-const TRANSLATE_CACHE = {};  // lang -> qHash -> translated
 
-function qHash(q) {
-  return q.q.slice(0, 40);
-}
-
-async function translateQuestions(questions, targetLang) {
-  const langName = targetLang === 'ru' ? 'Russian' : 'English';
-  const BATCH = 12;
-  const result = [...questions];
-  const toTranslate = [];
-
-  // Hansıları cache-dədir, hansıları lazımdır
-  if (!TRANSLATE_CACHE[targetLang]) TRANSLATE_CACHE[targetLang] = {};
-  const cache = TRANSLATE_CACHE[targetLang];
-
-  questions.forEach((q, i) => {
-    const h = qHash(q);
-    if (cache[h]) {
-      result[i] = { ...q, ...cache[h] };
-    } else {
-      toTranslate.push({ i, q });
-    }
-  });
-
-  if (!toTranslate.length) return result;
-
-  // Batch-lərlə göndər
-  for (let b = 0; b < toTranslate.length; b += BATCH) {
-    const batch = toTranslate.slice(b, b + BATCH);
-    const statusEl = document.getElementById('translate-status');
-    if (statusEl) {
-      statusEl.textContent = `${t('translating') || 'Tərcümə edilir...'} ${Math.min(b + BATCH, toTranslate.length)}/${toTranslate.length}`;
-    }
-
-    const payload = batch.map(({ q }) => ({
-      q: q.q,
-      opts: q.opts,
-      exp: q.exp
-    }));
-
-    const prompt = `Translate these ${payload.length} quiz questions from Azerbaijani to ${langName}.
-Return ONLY a JSON array with the same structure. Keep option letters, numbers, formulas, proper nouns as-is.
-Input: ${JSON.stringify(payload)}
-Output must be valid JSON array only, no markdown, no explanation.`;
-
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    if (!resp.ok) throw new Error('API ' + resp.status);
-    const data = await resp.json();
-    const raw  = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
-    const json = raw.replace(/```json|```/g, '').trim();
-    const translated = JSON.parse(json);
-
-    batch.forEach(({ i, q }, bi) => {
-      const tr = translated[bi];
-      if (tr && tr.q) {
-        const merged = {
-          ...q,
-          q:    tr.q,
-          opts: tr.opts && tr.opts.length === 4 ? tr.opts : q.opts,
-          exp:  tr.exp || q.exp,
-        };
-        result[i] = merged;
-        cache[qHash(q)] = { q: tr.q, opts: merged.opts, exp: merged.exp };
-      }
-    });
-  }
-
-  return result;
-}
-
-async function startQuiz() {
+function startQuiz() {
   const qs = buildQuestions();
-  if (!qs || !qs.length) { alert(t('noQFound') || 'Sual tapılmadı!'); return; }
-
-  if (LANG === 'az') {
-    launchQuiz(qs);
-    return;
-  }
-
-  // RU / EN seçilibsə — sualları API ilə tərcümə et
-  showScreen('s-quiz');
-  el('q-nav-strip').innerHTML = '';
-  el('q-progress').style.width = '0%';
-  el('q-area').innerHTML = `
-    <div style="text-align:center;padding:3rem 1rem">
-      <div class="gen-spinner" style="margin:0 auto 1rem"></div>
-      <div style="font-size:15px;font-weight:600;color:var(--txt2)" id="translate-status">${t('translating') || 'Suallar tərcümə edilir...'}</div>
-    </div>`;
-  hide('finish-wrap');
-
-  try {
-    const translated = await translateQuestions(qs, LANG);
-    launchQuiz(translated);
-  } catch(e) {
-    console.error('Translate error:', e);
-    // fallback — orijinal AZ dildə başla
-    launchQuiz(qs);
-  }
+  if (!qs || !qs.length) { alert('Sual tapılmadı!'); return; }
+  launchQuiz(qs);
 }
 
 function launchQuiz(qs) {
@@ -485,13 +427,13 @@ function renderQ() {
   const isFirst  = ST.current === 0;
   const isLast   = ST.current === total - 1;
 
-  el('quiz-meta').textContent = `${t('questionOf')} ${ST.current + 1} ${t('of')} ${total}`;
+  el('quiz-meta').textContent = `${'Sual'} ${ST.current + 1} ${'/'} ${total}`;
   el('q-progress').style.width = ((ST.current + 1) / total * 100) + '%';
   hide('finish-wrap');
 
   const bal      = q.bal || 10;
   const diffCls  = bal >= 14 ? 'diff-hard' : bal >= 12 ? 'diff-medium' : 'diff-easy';
-  const diffLbl  = bal >= 14 ? t('hard') : bal >= 12 ? t('medium') : t('easy');
+  const diffLbl  = bal >= 14 ? 'Çətin' : bal >= 12 ? 'Orta' : 'Asan';
 
   // Variant sıraları
   const optsHTML = q.opts.map((txt, i) => {
@@ -514,7 +456,7 @@ function renderQ() {
   let fbHTML = '';
   if (finished) {
     const ok = userAns === q.ans;
-    fbHTML = `<div class="feedback ${ok ? 'fb-ok' : 'fb-no'}">${ok ? '✓ ' + t('correct') + '! ' : '✗ ' + t('wrong') + '. '}${q.exp}</div>`;
+    fbHTML = `<div class="feedback ${ok ? 'fb-ok' : 'fb-no'}">${ok ? '✓ ' + 'Doğru' + '! ' : '✗ ' + 'Yanlış' + '. '}${q.exp}</div>`;
   }
 
   el('q-area').innerHTML = `
@@ -522,7 +464,7 @@ function renderQ() {
       <div class="q-meta-row">
         <span class="q-pill subj">${q._subject || ''}</span>
         <span class="q-pill ${diffCls}">${diffLbl}</span>
-        <span class="q-pill bal">${bal} ${t('bal')}</span>
+        <span class="q-pill bal">${bal} ${'bal'}</span>
         <span class="q-num">${ST.current + 1}/${total}</span>
       </div>
       <div class="q-text">${q.q}</div>
@@ -530,11 +472,11 @@ function renderQ() {
       ${fbHTML}
     </div>
     <div class="nav-row">
-      <button class="btn" onclick="prevQ()" ${isFirst ? 'disabled' : ''}>${t('prev')}</button>
+      <button class="btn" onclick="prevQ()" ${isFirst ? 'disabled' : ''}>${'← Əvvəlki'}</button>
       <div style="font-size:13px;color:var(--text3);font-weight:600">
-        ${ST.answers.filter(a => a !== null).length}/${total} ${t('answered')}
+        ${ST.answers.filter(a => a !== null).length}/${total} ${'cavablandı'}
       </div>
-      <button class="btn btn-primary" onclick="nextQ()" ${isLast ? 'disabled' : ''}>${t('next')}</button>
+      <button class="btn btn-primary" onclick="nextQ()" ${isLast ? 'disabled' : ''}>${'Növbəti →'}</button>
     </div>`;
 
   updNav();
@@ -559,11 +501,11 @@ function checkShowFinish() {
   const total     = ST.questions.length;
   const unanswered= total - answered;
   if (answered === total) {
-    el('finish-sub').innerHTML = `${t('allAnswered')} ${t('newExam')}ə hazırsınız.`;
+    el('finish-sub').innerHTML = `${'Bütün sualları cavabladınız!'} ${'Yeni sınaq'}ə hazırsınız.`;
     show('finish-wrap');
   } else if (unanswered <= 5 && unanswered > 0) {
     // Son 5 sual qaldıqda xatırladıcı göstər
-    el('finish-sub').innerHTML = `<span style="color:var(--amber)">${unanswered} ${t('unanswered')}</span>`;
+    el('finish-sub').innerHTML = `<span style="color:var(--amber)">${unanswered} ${'sual hələ cavabsız.'}</span>`;
     show('finish-wrap');
   }
 }
@@ -581,8 +523,8 @@ function confirmFinishNow() {
   const answered = ST.answers.filter(a => a !== null).length;
   const left     = total - answered;
   const desc = left > 0
-    ? `${answered}/${total} ${t('questions')} ${t('answered')}. <span style="color:var(--amber)">${left} ${t('unanswered')}</span>`
-    : `${total}/${total} ${t('questions')} ${t('answered')}.`;
+    ? `${answered}/${total} ${'sual'} ${'cavablandı'}. <span style="color:var(--amber)">${left} ${'sual hələ cavabsız.'}</span>`
+    : `${total}/${total} ${'sual'} ${'cavablandı'}.`;
   document.getElementById('finish-now-desc').innerHTML = desc;
   document.getElementById('modal-finish-now').style.display = 'flex';
 }
@@ -616,22 +558,22 @@ function processResult() {
 
   el('medal-icon').textContent = pct>=85?'🏆':pct>=70?'🥇':pct>=50?'🥈':'🥉';
   el('big-score').textContent  = bal700;
-  el('res-title').textContent  = pct>=85?t('excellent'):pct>=70?t('good'):pct>=50?t('average'):t('poor');
-  el('res-sub').textContent    = `${correct}/${total} • ${pct}% • ${earned} ${t('rawScore')}`;
+  el('res-title').textContent  = pct>=85?'Əla nəticə!':pct>=70?'Yaxşı cəhd!':pct>=50?'Orta səviyyə':'Daha çox məşq lazımdır';
+  el('res-sub').textContent    = `${correct}/${total} • ${pct}% • ${earned} ${'xam bal'}`;
 
   el('stat-cards').innerHTML = `
-    <div class="stat-card"><span class="stat-n" style="color:#16A34A">${correct}</span><span class="stat-l">${t('correct')}</span></div>
-    <div class="stat-card"><span class="stat-n" style="color:#DC2626">${total-correct}</span><span class="stat-l">${t('wrong')}</span></div>
-    <div class="stat-card"><span class="stat-n" style="color:#2D6BE4">${bal700}</span><span class="stat-l">/ 700 ${t('bal')}</span></div>
-    <div class="stat-card"><span class="stat-n" style="color:#B45309">${pct}%</span><span class="stat-l">${t('percent')}</span></div>`;
+    <div class="stat-card"><span class="stat-n" style="color:#16A34A">${correct}</span><span class="stat-l">${'Doğru'}</span></div>
+    <div class="stat-card"><span class="stat-n" style="color:#DC2626">${total-correct}</span><span class="stat-l">${'Yanlış'}</span></div>
+    <div class="stat-card"><span class="stat-n" style="color:#2D6BE4">${bal700}</span><span class="stat-l">/ 700 ${'bal'}</span></div>
+    <div class="stat-card"><span class="stat-n" style="color:#B45309">${pct}%</span><span class="stat-l">${'Faiz'}</span></div>`;
 
   buildSubjBreakdown(qs);
   buildWrongReview(qs);
   buildFullReview(qs);
 
   const label = ST.examType === 'all_mixed'
-    ? `${ST.grade}${t('gradeLabel')} — ${t('allMixed')}`
-    : `${ST.subject}${ST.topic && ST.topic !== 'all' ? ' — ' + ST.topic : ''} (${ST.grade}${t('gradeLabel')})`;
+    ? `${ST.grade}${'-ci sinif'} — ${'Bütün fənlər (qarışıq)'}`
+    : `${ST.subject}${ST.topic && ST.topic !== 'all' ? ' — ' + ST.topic : ''} (${ST.grade}${'-ci sinif'})`;
   saveHistory({ label, bal700, correct, total, pct, date: new Date().toLocaleDateString('az-AZ') });
 
   showScreen('s-result');
@@ -665,18 +607,18 @@ function buildWrongReview(qs) {
   const wrongs = [];
   qs.forEach((q, i) => { if (ST.answers[i] !== q.ans) wrongs.push({ q, i, userAns:ST.answers[i] }); });
   el('wrong-count-label').textContent = wrongs.length === 0
-    ? '🎉 ' + t('noErrors')
-    : `${wrongs.length} ${t('errorsFound')}`;
+    ? '🎉 ' + 'Bütün sualları düzgün cavabladınız!'
+    : `${wrongs.length} ${'səhv cavab — aşağıda izahat'}`;
   if (!wrongs.length) { el('wrong-review').innerHTML = '<div style="text-align:center;padding:3rem;font-size:48px">🎉</div>'; return; }
   const LTR = ['A','B','C','D'];
   el('wrong-review').innerHTML = wrongs.map(({ q, i, userAns }, wi) => {
-    const yt = userAns !== null ? `${LTR[userAns]}) ${q.opts[userAns]}` : t('unansweredLbl');
+    const yt = userAns !== null ? `${LTR[userAns]}) ${q.opts[userAns]}` : 'Cavabsız';
     return `<div class="wrong-item">
       <div class="wrong-item-num">Sual ${i+1} &nbsp;|&nbsp; Səhv #${wi+1} &nbsp;|&nbsp; ${q._subject}</div>
       <div class="wrong-q">${q.q}</div>
       <div class="answer-compare">
-        <div class="ans-box ans-yours"><div class="ans-box-label">${t('yourAnswer')}</div>${yt}</div>
-        <div class="ans-box ans-correct"><div class="ans-box-label">${t('correctAnswer')}</div>${LTR[q.ans]}) ${q.opts[q.ans]}</div>
+        <div class="ans-box ans-yours"><div class="ans-box-label">${'Sizin cavab'}</div>${yt}</div>
+        <div class="ans-box ans-correct"><div class="ans-box-label">${'Doğru cavab'}</div>${LTR[q.ans]}) ${q.opts[q.ans]}</div>
       </div>
       <div class="explanation-box">${q.exp}</div>
     </div>`;
@@ -689,10 +631,10 @@ function buildFullReview(qs) {
     const ok  = ST.answers[i] === q.ans;
     const ans = ST.answers[i] !== null ? `${LTR[ST.answers[i]]}) ${q.opts[ST.answers[i]]}` : 'Cavabsız';
     return `<div class="rev-item">
-      <span class="rev-badge ${ok?'ok':'no'}">${ok?'✓ '+t('correct'):'✗ '+t('wrong')}</span>
+      <span class="rev-badge ${ok?'ok':'no'}">${ok?'✓ '+'Doğru':'✗ '+'Yanlış'}</span>
       <div class="rev-q">${i+1}. ${q.q}</div>
-      <div class="rev-yours">${t('yourAnswer')}: <strong>${ans}</strong></div>
-      ${!ok ? `<div class="rev-correct">${t('correctAnswer')}: <strong>${LTR[q.ans]}) ${q.opts[q.ans]}</strong></div>` : ''}
+      <div class="rev-yours">${'Sizin cavab'}: <strong>${ans}</strong></div>
+      ${!ok ? `<div class="rev-correct">${'Doğru cavab'}: <strong>${LTR[q.ans]}) ${q.opts[q.ans]}</strong></div>` : ''}
       <div class="rev-exp">${q.exp}</div>
     </div>`;
   }).join('');
@@ -960,11 +902,50 @@ function applyTheme() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+
+/* ══════════════════════════════════════════
+   ADMİN — sabit hesab (admin / admin123)
+══════════════════════════════════════════ */
+async function initAdmin() {
+  await initFirebase();
+  // localStorage-dan Firebase-ə köç (əgər Firebase varsa)
+  if (_db) {
+    await migrateLocalToFirebase();
+  }
+  const users = getUsers();
+  if (!users['admin']) {
+    users['admin'] = { name:'Administrator', grade:'admin', role:'admin', pass:'admin123', history:[] };
+    saveUsers(users);
+    if (_db) await FBUsers.save('admin', users['admin']);
+  }
+}
+
+async function migrateLocalToFirebase() {
+  try {
+    const fbUsers = await FBUsers.getAll();
+    const localUsers = JSON.parse(localStorage.getItem('az_users') || '{}');
+    // Firebase boşdursa və local varsa → Firebase-ə köç
+    if (Object.keys(fbUsers).length === 0 && Object.keys(localUsers).length > 0) {
+      await FBUsers.saveAll(localUsers);
+      console.log('LocalStorage → Firebase köçürüldü');
+    } else if (Object.keys(fbUsers).length > 0) {
+      // Firebase dolubsa → local-a da yaz (oflayn dəstək)
+      localStorage.setItem('az_users', JSON.stringify(fbUsers));
+    }
+  } catch(e) { console.warn('Migrate error:', e); }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await initAdmin();
   applyTheme();
-  applyTranslations();
   const btn = el('theme-btn');
   if (btn) btn.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
   const cu = getCurUser();
-  if (cu) { enterApp(); } else { showScreen('s-auth'); }
+  if (cu) {
+    enterApp();
+  } else {
+    showScreen('s-auth');
+    const hasUsers = Object.keys(getUsers()).length > 0;
+    switchAuth(hasUsers ? 'login' : 'register');
+  }
 });

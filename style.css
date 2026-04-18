@@ -721,31 +721,6 @@ html.light .modal-overlay { background: rgba(13,20,80,.5) }
   .start-card  { flex-direction: column; align-items: flex-start }
 }
 
-/* ── Dil seçici ── */
-.lang-switcher {
-  display: flex; gap: 3px;
-  background: var(--bg2);
-  border-radius: var(--r);
-  padding: 3px;
-  border: 1px solid var(--bd);
-}
-.lang-btn {
-  padding: 5px 10px; border: none;
-  border-radius: 8px; font-size: 12px;
-  font-weight: 700; cursor: pointer;
-  background: transparent; color: var(--txt2);
-  transition: all .15s; letter-spacing: .03em;
-}
-.lang-btn:hover { color: var(--txt) }
-.lang-btn.active {
-  background: var(--acc); color: #fff;
-  box-shadow: 0 2px 8px var(--acc-glow);
-}
-
-/* Auth ekranında dil seçici */
-.auth-lang {
-  margin-bottom: 1.1rem;
-}
 
 /* İstənilən vaxt bitirmək düyməsi */
 .btn-finish-now {
@@ -766,4 +741,286 @@ html.light .modal-overlay { background: rgba(13,20,80,.5) }
 html.light .btn-finish-now {
   background: rgba(239,68,68,.08);
   color: #B91C1C;
+}
+
+/* ══ Liderboard ══ */
+.lb-tabs { display:flex; gap:4px; background:var(--bg2); border-radius:var(--r); padding:4px; margin-bottom:1rem }
+.lb-tab  { flex:1; padding:8px 6px; border:none; border-radius:9px; background:transparent; font-size:13px; font-weight:600; color:var(--txt2); cursor:pointer; transition:all .15s }
+.lb-tab.active { background:var(--acc); color:#fff; box-shadow:0 4px 12px var(--acc-glow) }
+.lb-row { display:flex; align-items:center; gap:12px; padding:11px 14px; background:var(--bg3); border-radius:var(--r); margin-bottom:8px; border:1px solid var(--bd) }
+.lb-row:hover { border-color:var(--bd2) }
+.lb-me  { background:var(--acc-bg) !important; border-color:rgba(79,142,247,.3) !important }
+.lb-rank { font-size:20px; width:30px; text-align:center; flex-shrink:0 }
+.lb-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--acc),var(--acc2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:#fff; flex-shrink:0 }
+.lb-info   { flex:1; min-width:0 }
+.lb-name   { font-size:14px; font-weight:600; color:var(--txt) }
+.lb-meta   { font-size:11px; color:var(--txt3); margin-top:2px }
+.lb-you    { font-size:11px; color:var(--acc); font-weight:700 }
+.lb-score  { text-align:right; flex-shrink:0 }
+.lb-best   { font-size:19px; font-weight:800; color:var(--acc) }
+.lb-label  { font-size:10px; color:var(--txt3); margin-top:2px }
+
+/* ══ Adaptiv ══ */
+.adaptive-row      { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--bd) }
+.adaptive-topic    { font-size:13px; font-weight:600; color:var(--txt); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.adaptive-bar-wrap { width:90px; height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; flex-shrink:0 }
+.adaptive-bar      { height:100%; border-radius:3px }
+.adaptive-pct      { font-size:12px; font-weight:700; width:32px; text-align:right; flex-shrink:0 }
+
+/* ══ Müəllim paneli ══ */
+.teacher-tabs { display:flex; gap:4px; background:var(--bg2); border-radius:var(--r); padding:4px; margin-bottom:1rem }
+.teacher-tab  { flex:1; padding:8px 6px; border:none; border-radius:9px; background:transparent; font-size:13px; font-weight:600; color:var(--txt2); cursor:pointer; transition:all .15s }
+.teacher-tab.active { background:var(--acc); color:#fff; box-shadow:0 4px 12px var(--acc-glow) }
+.teacher-student-row { display:flex; align-items:center; gap:12px; padding:11px 14px; background:var(--bg3); border-radius:var(--r); margin-bottom:8px; border:1px solid var(--bd) }
+.ts-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--acc),var(--acc2)); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:#fff; flex-shrink:0 }
+.ts-info   { flex:1 }
+.ts-name   { font-size:14px; font-weight:600; color:var(--txt) }
+.ts-meta   { font-size:11px; color:var(--txt3); margin-top:2px }
+.ts-scores { text-align:right; flex-shrink:0 }
+.ts-best   { font-size:16px; font-weight:800; color:var(--acc) }
+.ts-label  { font-size:11px; color:var(--txt3); margin-top:2px }
+
+/* ══ Müəllim paneli — yeni card ══ */
+.ts-card { background:var(--bg3); border:1px solid var(--bd); border-radius:var(--rl); padding:1rem; margin-bottom:10px }
+.ts-card-head { display:flex; align-items:center; gap:12px; margin-bottom:8px }
+.ts-right { margin-left:auto; text-align:right }
+.ts-level { font-size:13px; font-weight:700; margin-bottom:3px }
+.ts-best  { font-size:12px; color:var(--txt3) }
+.ts-exams { border-top:1px solid var(--bd); padding-top:8px; display:flex; flex-direction:column; gap:5px }
+.ts-exam-row { display:flex; align-items:center; gap:8px; font-size:12px }
+.ts-exam-label { flex:1; color:var(--txt2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.ts-exam-score { font-weight:700; flex-shrink:0 }
+.ts-exam-date  { color:var(--txt3); flex-shrink:0 }
+
+/* ══ Müəllim ekranı ══ */
+.teacher-body { max-width:960px; margin:0 auto; padding:2.5rem 1.25rem 5rem }
+.t-search-wrap { margin-left:auto }
+.t-search {
+  padding:8px 14px; border-radius:var(--r);
+  border:1.5px solid var(--bd2); background:var(--surface);
+  font-size:13px; color:var(--txt); outline:none; width:200px;
+  transition:border-color .15s;
+}
+.t-search:focus { border-color:var(--acc) }
+.t-search::placeholder { color:var(--txt3) }
+
+.t-grade-group { margin-bottom:1.5rem }
+.t-grade-label {
+  font-size:12px; font-weight:700; color:var(--acc);
+  text-transform:uppercase; letter-spacing:.07em;
+  background:var(--acc-bg); border:1px solid rgba(79,142,247,.2);
+  padding:4px 12px; border-radius:20px; display:inline-block;
+  margin-bottom:.75rem;
+}
+.ts-exam-pct { color:var(--txt3); font-size:11px; flex-shrink:0 }
+
+/* ══ Admin paneli ══ */
+.admin-body { max-width:960px; margin:0 auto; padding:2rem 1.25rem 5rem }
+
+.admin-tabs {
+  display:flex; gap:6px; flex-wrap:wrap;
+  background:var(--surface); border:1px solid var(--bd2);
+  border-radius:var(--rl); padding:6px;
+  margin-bottom:2rem;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.admin-tab {
+  flex:1; padding:10px 14px; border:none; border-radius:var(--r);
+  background:transparent; font-size:13px; font-weight:600;
+  color:var(--txt2); cursor:pointer; transition:all .15s;
+  white-space:nowrap;
+}
+.admin-tab:hover { background:var(--bg2); color:var(--txt) }
+.admin-tab.active {
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  color:#fff; box-shadow:0 4px 14px var(--acc-glow);
+}
+
+.admin-form-card {
+  background:var(--surface); border:1px solid var(--bd2);
+  border-radius:var(--rl); padding:1.5rem;
+  margin-top:1rem;
+  box-shadow:0 8px 28px rgba(0,0,0,.3);
+}
+
+/* ══ Streak widget ══ */
+.streak-widget { background:var(--surface); border:1px solid var(--bd2); border-radius:var(--rl); padding:1.25rem; box-shadow:0 8px 24px rgba(0,0,0,.25) }
+.streak-row    { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:1rem }
+.streak-item   { text-align:center; background:var(--bg2); border-radius:var(--r); padding:.75rem .5rem }
+.streak-icon   { font-size:22px; margin-bottom:4px }
+.streak-num    { font-size:20px; font-weight:800; color:var(--txt) }
+.streak-label  { font-size:10px; color:var(--txt3); margin-top:2px; text-transform:uppercase; letter-spacing:.06em }
+.streak-progress-wrap { background:var(--bg2); border-radius:var(--r); padding:.75rem }
+.streak-bar-bg  { height:8px; background:var(--bg3); border-radius:4px; overflow:hidden }
+.streak-bar-fill{ height:100%; border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1) }
+
+.streak-toast {
+  position:fixed; bottom:24px; right:24px; z-index:999;
+  background:var(--surface); border:1px solid rgba(79,142,247,.4);
+  border-radius:var(--rl); padding:14px 20px;
+  font-size:14px; font-weight:600; color:var(--txt);
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  opacity:0; transition:opacity .3s;
+  max-width:280px;
+}
+
+/* ══ Ödev widget (şagird) ══ */
+.hw-widget       { background:var(--surface); border:1px solid var(--bd2); border-radius:var(--rl); padding:1.25rem; box-shadow:0 8px 24px rgba(0,0,0,.25) }
+.hw-widget-title { font-size:14px; font-weight:700; color:var(--txt); margin-bottom:.75rem }
+.hw-item         { display:flex; align-items:center; gap:10px; padding:9px 12px; background:var(--bg2); border-radius:var(--r); margin-bottom:7px; border:1px solid var(--bd) }
+.hw-item.hw-done    { background:var(--grn-bg); border-color:rgba(34,197,94,.25) }
+.hw-item.hw-overdue { background:var(--red-bg); border-color:rgba(239,68,68,.25); opacity:.7 }
+.hw-item-icon    { font-size:18px; flex-shrink:0 }
+.hw-item-info    { flex:1; min-width:0 }
+.hw-item-title   { font-size:13px; font-weight:600; color:var(--txt) }
+.hw-item-meta    { font-size:11px; color:var(--txt3); margin-top:2px }
+.hw-item-score   { font-size:14px; font-weight:800; color:var(--green); flex-shrink:0 }
+
+/* ══ Ödev kartı (müəllim/admin) ══ */
+.hw-card          { background:var(--surface); border:1px solid var(--bd2); border-radius:var(--rl); padding:1.1rem; margin-bottom:12px }
+.hw-card-head     { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:.75rem }
+.hw-card-title    { font-size:15px; font-weight:700; color:var(--txt) }
+.hw-card-meta     { font-size:12px; color:var(--txt3); margin-top:3px }
+.hw-completion    { font-size:12px; font-weight:700; background:var(--acc-bg); color:var(--acc); border:1px solid rgba(79,142,247,.25); padding:4px 12px; border-radius:20px; flex-shrink:0 }
+.hw-done-badge    { background:var(--grn-bg); color:var(--green); border-color:rgba(34,197,94,.25) }
+.hw-overdue-badge { background:var(--red-bg);  color:var(--red);   border-color:rgba(239,68,68,.25) }
+.hw-results-list  { border-top:1px solid var(--bd); padding-top:.65rem; display:flex; flex-direction:column; gap:5px }
+.hw-result-row    { display:flex; align-items:center; justify-content:space-between; font-size:13px }
+.hw-result-name   { color:var(--txt); font-weight:500 }
+.hw-result-score  { font-weight:700; flex-shrink:0 }
+/* ══ PROFİL, BADJLAR, TAKVİM, ANALİTİKA ══ */
+.profile-header {
+  display:flex; align-items:center; gap:1rem;
+  padding:1.5rem;
+  background:linear-gradient(135deg, rgba(79,142,247,.1), rgba(123,92,245,.1));
+  border-radius:var(--rl);
+  margin-bottom:1.5rem;
+  border:1px solid var(--acc-bg);
+}
+.profile-avatar {
+  width:80px; height:80px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; font-weight:800; color:white;
+  flex-shrink:0;
+}
+.profile-info { flex:1; min-width:0 }
+.profile-info h2 { margin-bottom:4px; font-size:20px }
+.profile-info p { font-size:14px; color:var(--txt2) }
+
+.profile-stats {
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+  gap:12px; margin-bottom:1.5rem;
+}
+.stat-item {
+  padding:1rem; background:var(--surface);
+  border:1px solid var(--bd); border-radius:var(--r);
+  text-align:center;
+}
+.stat-val {
+  font-size:24px; font-weight:800; color:var(--acc);
+  margin-bottom:4px;
+}
+.stat-label {
+  font-size:12px; color:var(--txt3); font-weight:500;
+}
+
+.profile-section { margin-bottom:1rem }
+.profile-section h3 { margin-bottom:1rem; color:var(--txt2) }
+
+.settings-item {
+  padding:1rem; background:var(--surface);
+  border:1px solid var(--bd); border-radius:var(--r);
+  margin-bottom:8px;
+  display:flex; align-items:flex-end; gap:1rem;
+}
+
+/* ══ BADJLAR ══ */
+.badge-card {
+  padding:1.25rem; background:var(--surface);
+  border:1px solid var(--bd); border-radius:var(--r);
+  text-align:center; transition:all .2s;
+}
+.badge-card.earned {
+  background:linear-gradient(135deg, rgba(34,197,94,.1), rgba(34,197,94,.05));
+  border-color:var(--green);
+  box-shadow:0 4px 12px rgba(34,197,94,.15);
+}
+.badge-card.locked {
+  opacity:.6; color:var(--txt3);
+}
+.badge-icon {
+  font-size:32px; margin-bottom:8px;
+}
+.badge-name {
+  font-size:14px; font-weight:600;
+  color:var(--txt); margin-bottom:4px;
+}
+.badge-desc {
+  font-size:12px; color:var(--txt3);
+  margin-bottom:8px; line-height:1.4;
+}
+.badge-status {
+  font-size:11px; font-weight:600;
+  color:var(--green); text-transform:uppercase;
+}
+.badge-card.locked .badge-status {
+  color:var(--txt3);
+}
+
+/* ══ TAKVİM ══ */
+.timetable-calendar {
+  background:var(--surface); border-radius:var(--r);
+  border:1px solid var(--bd); padding:1rem;
+  margin-bottom:1rem;
+}
+.calendar-header {
+  font-size:16px; font-weight:700;
+  text-align:center; margin-bottom:1rem;
+  padding-bottom:1rem; border-bottom:1px solid var(--bd);
+}
+.calendar-days {
+  display:grid; grid-template-columns:repeat(7, 1fr);
+  gap:4px;
+}
+.calendar-dayname {
+  text-align:center; font-size:11px; font-weight:700;
+  color:var(--txt3); padding:6px 0;
+}
+.calendar-day {
+  aspect-ratio:1;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:var(--bg3); border:1px solid var(--bd);
+  border-radius:var(--r); font-size:12px; font-weight:500;
+  position:relative; cursor:pointer; transition:all .15s;
+}
+.calendar-day:hover { border-color:var(--bd2) }
+.calendar-day.today {
+  border-color:var(--acc); background:var(--acc-bg);
+}
+.calendar-day.has-exam {
+  background:var(--grn-bg); border-color:var(--green);
+  color:var(--green); font-weight:700;
+}
+.calendar-empty { aspect-ratio:1; background:transparent }
+.cal-date { font-size:12px; font-weight:600 }
+.cal-count {
+  font-size:10px; position:absolute;
+  bottom:2px; right:2px;
+  background:var(--green); color:white; border-radius:50%;
+  width:18px; height:18px; display:flex;
+  align-items:center; justify-content:center;
+  font-weight:700;
+}
+
+/* ══ ANALİTİKA ══ */
+.progress-bar {
+  width:100%; height:6px; background:var(--bg3);
+  border-radius:3px; overflow:hidden; flex-shrink:0;
+}
+
+@media (max-width:600px) {
+  .profile-stats { grid-template-columns:repeat(3, 1fr) }
+  .calendar-days { grid-template-columns:repeat(7, 1fr); gap:2px }
+  .calendar-day { font-size:10px; aspect-ratio:1 }
+  .cal-count { width:16px; height:16px; font-size:9px }
 }
