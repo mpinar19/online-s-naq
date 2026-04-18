@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SinaqAZ — 700 Ballıq AI Sınaq Platforması
 
-## Getting Started
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/mpinar19/online-s-naq&root=sinaq-platform&env=ANTHROPIC_API_KEY)
 
-First, run the development server:
+## 🚀 Yerli işlətmək
 
 ```bash
+cd sinaq-platform
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**http://localhost:3000**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ☁️ Vercel-ə deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. [vercel.com](https://vercel.com) → **New Project**
+2. GitHub repo: `mpinar19/online-s-naq`
+3. **Root Directory**: `sinaq-platform`
+4. **Environment Variables**:
+   - `ANTHROPIC_API_KEY` = `sk-ant-...` ([console.anthropic.com](https://console.anthropic.com))
+5. **Deploy** düyməsinə bas
 
-## Learn More
+## 🔑 Demo hesablar
 
-To learn more about Next.js, take a look at the following resources:
+| Rol | İstifadəçi adı | Şifrə |
+|-----|----------------|-------|
+| Admin | `admin` | `admin123` |
+| Müəllim | `teacher` | `teacher123` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## ✨ Xüsusiyyətlər
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **700 ballıq sınaq sistemi** — 1-11-ci sinif, bütün fənlər
+- **PDF-dən sual** — fayl yüklə, AI mövzulara görə suallar yaradır
+- **İnternet axtarışı** — Wikipedia + Claude AI
+- **Müəllim paneli** — şagird nəticələri, zəif mövzular, PDF sual
+- **Admin paneli** — müəllim əlavə et, statistika
+- **Liderboard** — ümumi, sinif, həftəlik
+- **Nəticə analizi** — səhv sualların tam izahı
 
-## Deploy on Vercel
+## 🛠 Texnologiyalar
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16 · TypeScript · Tailwind CSS v4 · Zustand · Claude AI
