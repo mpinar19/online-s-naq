@@ -258,7 +258,7 @@ export default function TeacherScreen() {
                 📄 PDF faylı yükləyin — AI oxuyub mövzulara görə suallar yaradacaq. Sualları sınaq kimi başlada bilərsiniz.
               </p>
             </div>
-            <PDFUploadPanel />
+            <PDFUploadPanel teacherMode />
           </div>
         )}
       </div>
