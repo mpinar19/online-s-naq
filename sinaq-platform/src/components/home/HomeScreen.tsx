@@ -30,7 +30,12 @@ export default function HomeScreen() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
-    setUser(getCurUser());
+    const cu = getCurUser();
+    setUser(cu);
+    // Şagirdin sinifini avtomatik seç
+    if (cu && cu.role === 'student' && cu.grade) {
+      setGrade(cu.grade);
+    }
     const tryLoad = () => {
       const w = window as unknown as { QBANK_BY_GRADE?: Record<string, Record<string, Record<string, unknown[]>>> };
       if (w.QBANK_BY_GRADE) { setQbank(w.QBANK_BY_GRADE); }
@@ -137,37 +142,50 @@ export default function HomeScreen() {
           </button>
         </div>
 
-        {/* Quiz tab */}
+        {/* Step 1 — yalnız admin/teacher üçün sinif seçimi */}
         {activeTab === 'quiz' && (
           <div className="animate-fade-in">
-            {/* Step 1 */}
-            <div style={{ ...S.card, marginBottom: 16 }}>
-              <div style={S.stepHeader}>
-                <span style={S.stepBadge}>01</span>
-                <h3 style={S.stepTitle}>Sinif seçin</h3>
+            {user && user.role === 'student' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'rgba(99,120,255,0.08)', border: '1px solid rgba(99,120,255,0.15)', borderRadius: 14, marginBottom: 16 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#6378FF,#A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                  {user.grade}
+                </div>
+                <span style={{ fontSize: 13, color: '#7B8DB0' }}>
+                  <strong style={{ color: '#E8EEFF' }}>{user.grade}-ci sinif</strong> üzrə sınaqlar
+                </span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
-                {ALL_GRADES.map(g => {
-                  const col = GCOL[g];
-                  const active = grade === g;
-                  return (
-                    <button key={g} onClick={() => setGrade(g)} style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      padding: '10px 4px', borderRadius: 12, border: active ? '2px solid #6378FF' : '2px solid transparent',
-                      background: active ? 'rgba(99,120,255,0.15)' : col.bg + '18', color: col.txt,
-                      cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
-                      transform: active ? 'scale(1.05)' : 'none',
-                      boxShadow: active ? '0 0 16px rgba(99,120,255,0.2)' : 'none',
-                      position: 'relative',
-                    }}>
-                      <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{g}</span>
-                      <span style={{ fontSize: 9, opacity: 0.5, marginTop: 3 }}>sinif</span>
-                      {active && <div style={{ position: 'absolute', top: -4, right: -4, width: 10, height: 10, borderRadius: '50%', background: '#6378FF', boxShadow: '0 0 8px rgba(99,120,255,0.8)' }} />}
-                    </button>
-                  );
-                })}
+            )}
+
+            {/* Sinif seçimi — yalnız admin/teacher */}
+            {user && user.role !== 'student' && (
+              <div style={{ ...S.card, marginBottom: 16 }}>
+                <div style={S.stepHeader}>
+                  <span style={S.stepBadge}>01</span>
+                  <h3 style={S.stepTitle}>Sinif seçin</h3>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8 }}>
+                  {ALL_GRADES.map(g => {
+                    const col = GCOL[g];
+                    const active = grade === g;
+                    return (
+                      <button key={g} onClick={() => setGrade(g)} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        padding: '10px 4px', borderRadius: 12, border: active ? '2px solid #6378FF' : '2px solid transparent',
+                        background: active ? 'rgba(99,120,255,0.15)' : col.bg + '18', color: col.txt,
+                        cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
+                        transform: active ? 'scale(1.05)' : 'none',
+                        boxShadow: active ? '0 0 16px rgba(99,120,255,0.2)' : 'none',
+                        position: 'relative',
+                      }}>
+                        <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{g}</span>
+                        <span style={{ fontSize: 9, opacity: 0.5, marginTop: 3 }}>sinif</span>
+                        {active && <div style={{ position: 'absolute', top: -4, right: -4, width: 10, height: 10, borderRadius: '50%', background: '#6378FF', boxShadow: '0 0 8px rgba(99,120,255,0.8)' }} />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Step 2 */}
             {grade && (
