@@ -1,17 +1,13 @@
 ﻿import type { Metadata } from 'next';
 import Script from 'next/script';
+import ThemeProvider from '@/components/ui/ThemeProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'SinaqAZ — 700 Ballıq Sınaq Platforması',
   description: 'Azərbaycan məktəbliləri üçün professional sınaq platforması. 1-11-ci sinif, bütün fənlər, PDF-dən sual, internet axtarışı.',
   keywords: 'sinaq, imtahan, Azərbaycan, məktəb, test, 700 bal',
-  icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-    ],
-    apple: '/favicon.svg',
-  },
+  icons: { icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }], apple: '/favicon.svg' },
   openGraph: {
     title: 'SinaqAZ — 700 Ballıq Sınaq Platforması',
     description: 'Azərbaycan məktəbliləri üçün professional sınaq platforması.',
@@ -31,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased">
         <Script src="/data.js" strategy="beforeInteractive" />
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

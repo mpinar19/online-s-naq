@@ -1,10 +1,8 @@
 'use client';
-// ═══════════════════════════════════════
-// store.ts — Zustand global state
-// ═══════════════════════════════════════
 import { create } from 'zustand';
 import { Question, GeneratedQuestion } from './types';
 
+// ── Quiz State ────────────────────────────────────────────────
 interface QuizState {
   grade: string | null;
   examType: 'all_mixed' | 'by_subject' | null;
@@ -15,7 +13,6 @@ interface QuizState {
   answers: (number | null)[];
   timerLeft: number;
   examFinished: boolean;
-  isAdaptive: boolean;
   genQuestions: GeneratedQuestion[];
   uploadedText: string;
   uploadedFileName: string;
@@ -36,57 +33,46 @@ interface QuizState {
 }
 
 export const useQuizStore = create<QuizState>((set) => ({
-  grade: null,
-  examType: null,
-  subject: null,
-  topic: null,
-  questions: [],
-  current: 0,
-  answers: [],
-  timerLeft: 0,
-  examFinished: false,
-  isAdaptive: false,
-  genQuestions: [],
-  uploadedText: '',
-  uploadedFileName: '',
-  uploadedIsBase64: false,
+  grade: null, examType: null, subject: null, topic: null,
+  questions: [], current: 0, answers: [], timerLeft: 0,
+  examFinished: false, genQuestions: [],
+  uploadedText: '', uploadedFileName: '', uploadedIsBase64: false,
 
   setGrade: (g) => set({ grade: g, examType: null, subject: null, topic: null }),
   setExamType: (t) => set({ examType: t, subject: null, topic: null }),
   setSubject: (s) => set({ subject: s, topic: null }),
   setTopic: (t) => set({ topic: t }),
-  launchQuiz: (qs) => set({
-    questions: qs,
-    current: 0,
-    answers: new Array(qs.length).fill(null),
-    examFinished: false,
-    timerLeft: qs.length * 90,
-  }),
-  setAnswer: (idx, ans) => set((s) => {
-    const answers = [...s.answers];
-    answers[idx] = ans;
-    return { answers };
-  }),
+  launchQuiz: (qs) => set({ questions: qs, current: 0, answers: new Array(qs.length).fill(null), examFinished: false, timerLeft: qs.length * 90 }),
+  setAnswer: (idx, ans) => set((s) => { const a = [...s.answers]; a[idx] = ans; return { answers: a }; }),
   setCurrent: (i) => set({ current: i }),
   setTimerLeft: (t) => set({ timerLeft: t }),
   finishExam: () => set({ examFinished: true }),
-  resetQuiz: () => set({
-    grade: null, examType: null, subject: null, topic: null,
-    questions: [], current: 0, answers: [], examFinished: false,
-    timerLeft: 0, isAdaptive: false,
-  }),
+  resetQuiz: () => set({ grade: null, examType: null, subject: null, topic: null, questions: [], current: 0, answers: [], examFinished: false, timerLeft: 0 }),
   setGenQuestions: (qs) => set({ genQuestions: qs }),
-  setUploadedText: (t, name, isBase64) => set({
-    uploadedText: t, uploadedFileName: name, uploadedIsBase64: isBase64
-  }),
+  setUploadedText: (t, name, isBase64) => set({ uploadedText: t, uploadedFileName: name, uploadedIsBase64: isBase64 }),
 }));
 
+// ── App State ─────────────────────────────────────────────────
+type Screen = 'auth' | 'home' | 'quiz' | 'result' | 'teacher' | 'admin';
+type Lang = 'az' | 'ru' | 'en';
+type Theme = 'dark' | 'light';
+
 interface AppState {
-  screen: 'auth' | 'home' | 'quiz' | 'result' | 'teacher' | 'admin';
-  setScreen: (s: AppState['screen']) => void;
+  screen: Screen;
+  lang: Lang;
+  theme: Theme;
+  setScreen: (s: Screen) => void;
+  setLang: (l: Lang) => void;
+  setTheme: (t: Theme) => void;
+  toggleTheme: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
   screen: 'auth',
+  lang: 'az',
+  theme: 'dark',
   setScreen: (s) => set({ screen: s }),
+  setLang: (l) => set({ lang: l }),
+  setTheme: (t) => set({ theme: t }),
+  toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
 }));

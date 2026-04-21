@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuizStore, useAppStore } from '@/lib/store';
 import { GeneratedQuestion } from '@/lib/types';
 import Button from '@/components/ui/Button';
-import { X, Search, Loader2, Globe, BookOpen, Tag, Sparkles } from 'lucide-react';
+import { X, Search, Loader2, Globe, BookOpen, Tag, Sparkles, FileText } from 'lucide-react';
 
 const LTR = ['A', 'B', 'C', 'D'];
 
@@ -21,9 +21,14 @@ interface Props {
   inline?: boolean;
 }
 
+type SearchTab = 'internet' | 'text';
+
 export default function SearchQuestionsModal({ onClose, inline = false }: Props) {
   const { launchQuiz } = useQuizStore();
   const setScreen = useAppStore((s) => s.setScreen);
+  const [searchTab, setSearchTab] = useState<SearchTab>('internet');
+
+  // Internet search state
   const [topic, setTopic] = useState('');
   const [subject, setSubject] = useState('');
   const [grade, setGrade] = useState('');
@@ -33,6 +38,13 @@ export default function SearchQuestionsModal({ onClose, inline = false }: Props)
   const [error, setError] = useState('');
   const [searched, setSearched] = useState(false);
   const [selTopic, setSelTopic] = useState('all');
+
+  // Text-to-quiz state
+  const [textInput, setTextInput] = useState('');
+  const [textCount, setTextCount] = useState('10');
+  const [textLoading, setTextLoading] = useState(false);
+  const [textQuestions, setTextQuestions] = useState<GeneratedQuestion[]>([]);
+  const [textError, setTextError] = useState('');
 
   const allTopics = [...new Set(questions.map(q => q.topic).filter(Boolean))] as string[];
 
@@ -50,218 +62,256 @@ export default function SearchQuestionsModal({ onClose, inline = false }: Props)
       setQuestions(data.questions || []);
       setSearched(true); setSelTopic('all');
     } catch (e) {
-      setError((e instanceof Error ? e.message : 'Xəta baş verdi'));
+      setError(e instanceof Error ? e.message : 'Xəta baş verdi');
     } finally { setLoading(false); }
+  };
+
+  const doTextQuiz = async () => {
+    if (!textInput.trim() || textInput.trim().length < 20) { setTextError('Mətn ən az 20 simvol olmalıdır'); return; }
+    setTextLoading(true); setTextError(''); setTextQuestions([]);
+    try {
+      const res = await fetch('/api/text-to-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: textInput, count: parseInt(textCount) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Xəta');
+      setTextQuestions(data.questions || []);
+    } catch (e) {
+      setTextError(e instanceof Error ? e.message : 'Xəta baş verdi');
+    } finally { setTextLoading(false); }
   };
 
   const filtered = selTopic === 'all' ? questions : questions.filter(q => q.topic === selTopic);
 
-  const startQuiz = () => {
-    launchQuiz(filtered.map(q => ({ q: q.q, opts: q.opts, ans: q.ans, exp: q.exp, bal: 10, _subject: subject || 'Axtarış', _topic: q.topic || topic || 'Ümumi' })));
+  const startQuiz = (qs: GeneratedQuestion[]) => {
+    launchQuiz(qs.map(q => ({ q: q.q, opts: q.opts, ans: q.ans, exp: q.exp, bal: 10, _subject: subject || 'Axtarış', _topic: q.topic || topic || 'Ümumi' })));
     onClose(); setScreen('quiz');
   };
 
-  // ── Styles ──
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '11px 14px', background: '#0D1120',
-    border: '1px solid rgba(99,120,255,0.2)', borderRadius: 12,
-    color: '#E8EEFF', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
-  };
-  const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: 10, fontWeight: 700, color: '#3D4F70',
-    textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6,
-  };
+  // Styles
+  const inp: React.CSSProperties = { width: '100%', padding: '10px 13px', background: 'var(--bg2)', border: '1px solid var(--bd2)', borderRadius: 11, color: 'var(--txt)', fontSize: 13, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
+  const lbl: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 };
 
-  const formSection = (
-    <div style={{ padding: 20, borderBottom: '1px solid rgba(99,120,255,0.1)' }}>
-      {/* Quick picks */}
-      {!searched && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={labelStyle}>Sürətli seçim</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {QUICK.map(qt => (
-              <button key={qt.label} onClick={() => { setTopic(qt.label); setSubject(qt.subject); }}
-                className={`chip${topic === qt.label && subject === qt.subject ? ' active' : ''}`}>
-                {qt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Inputs */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-        <div>
-          <label style={labelStyle}>Mövzu</label>
-          <div style={{ position: 'relative' }}>
-            <BookOpen style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: '#3D4F70' }} />
-            <input style={{ ...inputStyle, paddingLeft: 32 }} placeholder="məs: Fotosintez..."
-              value={topic} onChange={e => setTopic(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && doSearch()} />
-          </div>
-        </div>
-        <div>
-          <label style={labelStyle}>Fənn</label>
-          <div style={{ position: 'relative' }}>
-            <Tag style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: '#3D4F70' }} />
-            <input style={{ ...inputStyle, paddingLeft: 32 }} placeholder="məs: Biologiya..."
-              value={subject} onChange={e => setSubject(e.target.value)} />
-          </div>
-        </div>
+  const questionCard = (q: GeneratedQuestion, i: number) => (
+    <div key={i} style={{ background: 'var(--bg2)', border: '1px solid var(--bd)', borderRadius: 14, padding: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--txt3)', flexShrink: 0, marginTop: 2, background: 'var(--surface)', padding: '2px 5px', borderRadius: 4, border: '1px solid var(--bd)' }}>{i + 1}</span>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', margin: 0, flex: 1, lineHeight: 1.5 }}>{q.q}</p>
       </div>
-
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 120 }}>
-          <label style={labelStyle}>Sinif</label>
-          <select style={{ ...inputStyle, appearance: 'none' }} value={grade} onChange={e => setGrade(e.target.value)}>
-            <option value="">Seçin...</option>
-            {['1','2','3','4','5','6','7','8','9','10','11'].map(g => (
-              <option key={g} value={g} style={{ background: '#0D1120' }}>{g}-ci sinif</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>Sual sayı</label>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {['5','10','20','30'].map(n => (
-              <button key={n} onClick={() => setCount(n)} className={`chip${count === n ? ' active' : ''}`}>{n}</button>
-            ))}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginBottom: 8 }}>
+        {q.opts.map((opt, j) => (
+          <div key={j} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 10px', borderRadius: 9, fontSize: 12, background: j === q.ans ? 'rgba(16,185,129,0.1)' : 'var(--surface)', border: j === q.ans ? '1px solid rgba(16,185,129,0.2)' : '1px solid var(--bd)', color: j === q.ans ? 'var(--green)' : 'var(--txt2)' }}>
+            <span style={{ fontWeight: 700, fontFamily: 'monospace', width: 14, flexShrink: 0 }}>{LTR[j]})</span>
+            <span style={{ flex: 1, lineHeight: 1.4 }}>{opt}</span>
+            {j === q.ans && <span style={{ color: 'var(--green)' }}>✓</span>}
           </div>
-        </div>
-        <Button variant="primary" onClick={doSearch} loading={loading}>
-          <Search style={{ width: 15, height: 15 }} />Axtar
-        </Button>
+        ))}
       </div>
-
-      {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 12 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }} />
-          <p style={{ fontSize: 12, color: '#EF4444', margin: 0 }}>{error}</p>
-        </div>
-      )}
+      {q.topic && <span className="topic-tag"><Tag style={{ width: 10, height: 10 }} />{q.topic}</span>}
     </div>
   );
 
-  const resultsSection = (
-    <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <Loader2 style={{ width: 40, height: 40, color: '#6378FF', margin: '0 auto 16px' }} className="animate-spin" />
-          <p style={{ fontSize: 14, fontWeight: 600, color: '#E8EEFF', margin: '0 0 6px' }}>Axtarılır...</p>
-          <p style={{ fontSize: 12, color: '#7B8DB0', margin: 0 }}>AI suallar yaradır</p>
+  const content = (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      {/* Sub-tabs */}
+      <div style={{ padding: '12px 16px 0', borderBottom: '1px solid var(--bd)' }}>
+        <div className="tab-bar" style={{ marginBottom: 0 }}>
+          <button onClick={() => setSearchTab('internet')} className={`tab-item${searchTab === 'internet' ? ' active' : ''}`}>
+            <Globe style={{ width: 14, height: 14 }} />İnternet axtarışı
+          </button>
+          <button onClick={() => setSearchTab('text')} className={`tab-item${searchTab === 'text' ? ' active' : ''}`}>
+            <FileText style={{ width: 14, height: 14 }} />Mətn → Sual
+          </button>
         </div>
-      )}
+      </div>
 
-      {!loading && searched && questions.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#7B8DB0' }}>
-          <Search style={{ width: 48, height: 48, margin: '0 auto 12px', opacity: 0.2 }} />
-          <p style={{ fontSize: 14, margin: 0 }}>Sual tapılmadı. Başqa mövzu cəhd edin.</p>
-        </div>
-      )}
-
-      {!loading && !searched && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#7B8DB0' }}>
-          <Globe style={{ width: 48, height: 48, margin: '0 auto 12px', opacity: 0.15 }} />
-          <p style={{ fontSize: 14, margin: '0 0 6px' }}>Mövzu daxil edin və axtarın</p>
-          <p style={{ fontSize: 12, margin: 0, opacity: 0.6 }}>AI Wikipedia-dan məlumat alıb suallar yaradacaq</p>
-        </div>
-      )}
-
-      {!loading && questions.length > 0 && (
-        <div>
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Sparkles style={{ width: 16, height: 16, color: '#F59E0B' }} />
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#E8EEFF' }}>{questions.length} sual yaradıldı</span>
-              {allTopics.length > 0 && <span style={{ fontSize: 11, color: '#3D4F70', fontFamily: 'monospace' }}>· {allTopics.length} mövzu</span>}
-            </div>
-            <Button variant="primary" size="sm" onClick={startQuiz}>
-              <Play style={{ width: 13, height: 13 }} />Sınaq kimi başla
-            </Button>
-          </div>
-
-          {/* Topic filter */}
-          {allTopics.length > 1 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, padding: '12px 14px', background: '#0D1120', borderRadius: 14, border: '1px solid rgba(99,120,255,0.08)' }}>
-              <button onClick={() => setSelTopic('all')} className={`chip${selTopic === 'all' ? ' active' : ''}`}>Bütün mövzular</button>
-              {allTopics.map(t => (
-                <button key={t} onClick={() => setSelTopic(t)} className={`chip${selTopic === t ? ' active' : ''}`}>
-                  <Tag style={{ width: 11, height: 11 }} />{t}
-                </button>
-              ))}
+      {/* Internet search */}
+      {searchTab === 'internet' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Quick picks */}
+          {!searched && (
+            <div>
+              <div style={lbl}>Sürətli seçim</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                {QUICK.map(qt => (
+                  <button key={qt.label} onClick={() => { setTopic(qt.label); setSubject(qt.subject); }} className={`chip${topic === qt.label && subject === qt.subject ? ' active' : ''}`}>
+                    {qt.label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Questions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {filtered.map((q, i) => (
-              <div key={i} style={{ background: '#0D1120', border: '1px solid rgba(99,120,255,0.08)', borderRadius: 16, padding: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
-                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#3D4F70', flexShrink: 0, marginTop: 2, background: '#141B2D', padding: '2px 6px', borderRadius: 4, border: '1px solid rgba(99,120,255,0.1)' }}>{i + 1}</span>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#E8EEFF', margin: 0, flex: 1, lineHeight: 1.6 }}>{q.q}</p>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
-                  {q.opts.map((opt, j) => (
-                    <div key={j} style={{
-                      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10, fontSize: 12,
-                      background: j === q.ans ? 'rgba(16,185,129,0.1)' : '#141B2D',
-                      border: j === q.ans ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(99,120,255,0.06)',
-                      color: j === q.ans ? '#6EE7B7' : '#7B8DB0',
-                    }}>
-                      <span style={{ fontWeight: 700, fontFamily: 'monospace', width: 16, flexShrink: 0 }}>{LTR[j]})</span>
-                      <span style={{ flex: 1, lineHeight: 1.4 }}>{opt}</span>
-                      {j === q.ans && <span style={{ color: '#10B981', flexShrink: 0 }}>✓</span>}
-                    </div>
-                  ))}
-                </div>
-                {q.topic && (
-                  <span className="topic-tag"><Tag style={{ width: 10, height: 10 }} />{q.topic}</span>
-                )}
+          {/* Inputs */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <label style={lbl}>Mövzu</label>
+              <div style={{ position: 'relative' }}>
+                <BookOpen style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--txt3)' }} />
+                <input style={{ ...inp, paddingLeft: 30 }} placeholder="məs: Fotosintez..." value={topic} onChange={e => setTopic(e.target.value)} onKeyDown={e => e.key === 'Enter' && doSearch()} />
               </div>
-            ))}
+            </div>
+            <div>
+              <label style={lbl}>Fənn</label>
+              <div style={{ position: 'relative' }}>
+                <Tag style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--txt3)' }} />
+                <input style={{ ...inp, paddingLeft: 30 }} placeholder="məs: Biologiya..." value={subject} onChange={e => setSubject(e.target.value)} />
+              </div>
+            </div>
           </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 100 }}>
+              <label style={lbl}>Sinif</label>
+              <select style={{ ...inp, appearance: 'none' }} value={grade} onChange={e => setGrade(e.target.value)}>
+                <option value="">Seçin...</option>
+                {['1','2','3','4','5','6','7','8','9','10','11'].map(g => <option key={g} value={g} style={{ background: 'var(--bg2)' }}>{g}-ci sinif</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lbl}>Sual sayı</label>
+              <div style={{ display: 'flex', gap: 5 }}>
+                {['5','10','20','30'].map(n => <button key={n} onClick={() => setCount(n)} className={`chip${count === n ? ' active' : ''}`}>{n}</button>)}
+              </div>
+            </div>
+            <Button variant="primary" onClick={doSearch} loading={loading}>
+              <Search style={{ width: 14, height: 14 }} />Axtar
+            </Button>
+          </div>
+
+          {error && <div style={{ padding: '9px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 11, fontSize: 12, color: 'var(--red)' }}>{error}</div>}
+
+          {loading && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <Loader2 style={{ width: 36, height: 36, color: 'var(--acc)', margin: '0 auto 12px' }} className="animate-spin" />
+              <p style={{ fontSize: 13, color: 'var(--txt2)', margin: 0 }}>Axtarılır...</p>
+            </div>
+          )}
+
+          {!loading && searched && questions.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--txt2)' }}>
+              <Search style={{ width: 40, height: 40, margin: '0 auto 10px', opacity: 0.2 }} />
+              <p style={{ fontSize: 13, margin: 0 }}>Sual tapılmadı.</p>
+            </div>
+          )}
+
+          {!loading && !searched && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--txt2)' }}>
+              <Globe style={{ width: 40, height: 40, margin: '0 auto 10px', opacity: 0.15 }} />
+              <p style={{ fontSize: 13, margin: '0 0 5px' }}>Mövzu daxil edin və axtarın</p>
+              <p style={{ fontSize: 11, margin: 0, opacity: 0.6 }}>AI Wikipedia-dan məlumat alıb suallar yaradacaq</p>
+            </div>
+          )}
+
+          {!loading && questions.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Sparkles style={{ width: 15, height: 15, color: 'var(--amber)' }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{questions.length} sual</span>
+                </div>
+                <Button variant="primary" size="sm" onClick={() => startQuiz(filtered)}>
+                  ▶ Sınaq kimi başla
+                </Button>
+              </div>
+              {allTopics.length > 1 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, padding: '10px 12px', background: 'var(--bg2)', borderRadius: 12, border: '1px solid var(--bd)' }}>
+                  <button onClick={() => setSelTopic('all')} className={`chip${selTopic === 'all' ? ' active' : ''}`}>Bütün mövzular</button>
+                  {allTopics.map(tp => <button key={tp} onClick={() => setSelTopic(tp)} className={`chip${selTopic === tp ? ' active' : ''}`}><Tag style={{ width: 10, height: 10 }} />{tp}</button>)}
+                </div>
+              )}
+              {filtered.map((q, i) => questionCard(q, i))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Text to quiz */}
+      {searchTab === 'text' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ padding: '10px 14px', background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)', borderRadius: 12 }}>
+            <p style={{ fontSize: 12, color: 'var(--acc3)', margin: 0, lineHeight: 1.6 }}>
+              📝 Mövzu mətni daxil edin — AI mətni oxuyub ona uyğun suallar yaradacaq
+            </p>
+          </div>
+
+          <div>
+            <label style={lbl}>Mövzu mətni</label>
+            <textarea
+              value={textInput}
+              onChange={e => setTextInput(e.target.value)}
+              placeholder="Burada mövzu mətni daxil edin... (dərslik paraqrafı, Wikipedia mətni, qeydlər və s.)"
+              style={{ ...inp, padding: '12px 14px', minHeight: 160, resize: 'vertical', lineHeight: 1.6 }}
+            />
+            <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 5, textAlign: 'right' }}>{textInput.length} simvol</div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+            <div>
+              <label style={lbl}>Sual sayı</label>
+              <div style={{ display: 'flex', gap: 5 }}>
+                {['5','10','15','20'].map(n => <button key={n} onClick={() => setTextCount(n)} className={`chip${textCount === n ? ' active' : ''}`}>{n}</button>)}
+              </div>
+            </div>
+            <Button variant="primary" onClick={doTextQuiz} loading={textLoading}>
+              <Sparkles style={{ width: 14, height: 14 }} />Suallar yarat
+            </Button>
+          </div>
+
+          {textError && <div style={{ padding: '9px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 11, fontSize: 12, color: 'var(--red)' }}>{textError}</div>}
+
+          {textLoading && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <Loader2 style={{ width: 36, height: 36, color: 'var(--acc)', margin: '0 auto 12px' }} className="animate-spin" />
+              <p style={{ fontSize: 13, color: 'var(--txt2)', margin: 0 }}>Mətn analiz edilir...</p>
+            </div>
+          )}
+
+          {!textLoading && textQuestions.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{textQuestions.length} sual yaradıldı</span>
+                <Button variant="primary" size="sm" onClick={() => startQuiz(textQuestions)}>
+                  ▶ Sınaq kimi başla
+                </Button>
+              </div>
+              {textQuestions.map((q, i) => questionCard(q, i))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 
-  // Inline mode
   if (inline) {
     return (
-      <div style={{ background: '#141B2D', border: '1px solid rgba(99,120,255,0.12)', borderRadius: 18, overflow: 'hidden' }}>
-        {formSection}
-        {resultsSection}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--bd)', borderRadius: 18, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 400 }}>
+        {content}
       </div>
     );
   }
 
-  // Modal mode
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}>
-      <div style={{ background: '#141B2D', border: '1px solid rgba(99,120,255,0.2)', borderRadius: 20, width: '100%', maxWidth: 680, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.7)' }} className="animate-fade-up">
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(99,120,255,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(99,120,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Globe style={{ width: 16, height: 16, color: '#6378FF' }} />
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--bd2)', borderRadius: 20, width: '100%', maxWidth: 680, maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px var(--shadow)' }} className="animate-fade-up">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--bd)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--acc-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Globe style={{ width: 15, height: 15, color: 'var(--acc)' }} />
             </div>
             <div>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#E8EEFF', margin: 0 }}>İnternet axtarışı</h3>
-              <p style={{ fontSize: 11, color: '#7B8DB0', margin: 0, marginTop: 2 }}>Mövzu üzrə AI suallar yarat</p>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', margin: 0 }}>Sual yarat</h3>
+              <p style={{ fontSize: 11, color: 'var(--txt2)', margin: 0, marginTop: 2 }}>İnternet axtarışı · Mətn → Sual</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444', cursor: 'pointer' }}>
-            <X style={{ width: 15, height: 15 }} />
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red)', cursor: 'pointer' }}>
+            <X style={{ width: 14, height: 14 }} />
           </button>
         </div>
-        {formSection}
-        {resultsSection}
+        {content}
       </div>
     </div>
   );
-}
-
-function Play({ style }: { style?: React.CSSProperties }) {
-  return <svg style={style} viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>;
 }
