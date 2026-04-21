@@ -130,20 +130,25 @@ export default function TeacherScreen() {
             <div style={{ ...card, padding: 20 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#3D4F70', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>Son sınaqlar</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {students
-                  .flatMap(([, u]) => (u.history || []).slice(0, 2).map(h => ({ ...h, sname: u.name, sgrade: u.grade })))
-                  .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-                  .slice(0, 8)
-                  .map((h, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#0D1120', borderRadius: 12, border: '1px solid rgba(99,120,255,0.07)' }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#6378FF,#A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#fff', flexShrink: 0 }}>{h.sname.charAt(0)}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#E8EEFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.sname}</div>
-                        <div style={{ fontSize: 11, color: '#3D4F70', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.label} · {h.date}</div>
+                {(() => {
+                  // Unikal sınaqlar — hər şagirddən yalnız 1 ən son sınaq
+                  const seen = new Set<string>();
+                  return students
+                    .flatMap(([, u]) => (u.history || []).slice(0, 1).map(h => ({ ...h, sname: u.name, sgrade: u.grade })))
+                    .filter(h => { const k = h.sname + h.label + h.date; if (seen.has(k)) return false; seen.add(k); return true; })
+                    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+                    .slice(0, 8)
+                    .map((h, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#0D1120', borderRadius: 12, border: '1px solid rgba(99,120,255,0.07)' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#6378FF,#A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#fff', flexShrink: 0 }}>{h.sname.charAt(0)}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#E8EEFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.sname}</div>
+                          <div style={{ fontSize: 11, color: '#3D4F70', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.label} · {h.date}</div>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, flexShrink: 0, color: (h.pct || 0) >= 70 ? '#10B981' : (h.pct || 0) >= 50 ? '#F59E0B' : '#EF4444' }}>{h.bal700}/700</div>
                       </div>
-                      <div style={{ fontSize: 13, fontWeight: 700, flexShrink: 0, color: (h.pct || 0) >= 70 ? '#10B981' : (h.pct || 0) >= 50 ? '#F59E0B' : '#EF4444' }}>{h.bal700}/700</div>
-                    </div>
-                  ))}
+                    ));
+                })()}
                 {totalExams === 0 && <p style={{ fontSize: 13, color: '#7B8DB0', textAlign: 'center', padding: '24px 0' }}>Hələ sınaq yoxdur.</p>}
               </div>
             </div>

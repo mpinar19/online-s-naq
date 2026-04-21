@@ -19,6 +19,7 @@ export default function ResultScreen() {
   const [activeTab, setActiveTab] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [expandedWrong, setExpandedWrong] = useState<number | null>(null);
+  const [historySaved, setHistorySaved] = useState(false);
 
   const total = questions.length;
   const correct = answers.filter((a, i) => a !== null && a === questions[i].ans).length;
@@ -32,6 +33,8 @@ export default function ResultScreen() {
   const scoreColor = pct >= 70 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444';
 
   useEffect(() => {
+    if (historySaved) return; // Yalnız 1 dəfə yaz
+    setHistorySaved(true);
     const cu = getCurUser();
     if (!cu) return;
     const bd: Record<string, { correct: number; total: number; subject: string }> = {};
